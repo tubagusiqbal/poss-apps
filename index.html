@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pesan Makanan</title>
 <style>
-:root{--bg:#1f3d24;--cd:#fff;--soft:#f4f5f2;--tx:#14201a;--mu:#6b7770;--ln:#e6e9e3;--pr:#2f5d34;--pr2:#244a29;--ok:#22a53a;--wn:#f59e0b;--bad:#dc2626;box-sizing:border-box}
+:root{--bg:#fff;--cd:#fff;--tx:#14201a;--pr:#2f5d34;--pt:#fff;--soft:color-mix(in srgb,var(--tx) 5%,var(--cd));--mu:color-mix(in srgb,var(--tx) 55%,var(--cd));--ln:color-mix(in srgb,var(--tx) 12%,var(--cd));--pr2:color-mix(in srgb,var(--pr) 78%,#000);--sh:0 4px 18px rgba(0,0,0,.22);--ok:#22a53a;--wn:#f59e0b;--bad:#dc2626;box-sizing:border-box}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
-body{background:radial-gradient(1200px 700px at 20% 0%,#3a6b3f,#1f3d24 60%,#142a18);background-attachment:fixed;color:var(--tx);font:15px/1.4 Inter,"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+body{background:var(--bg);color:var(--tx);font:15px/1.4 Inter,"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
 #app{max-width:1360px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 12px calc(110px + env(safe-area-inset-bottom))}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,textarea{font:inherit;color:var(--tx);width:100%;padding:10px 12px;border:1px solid transparent;border-radius:12px;background:var(--soft);outline:0}
-input:focus,textarea:focus{border-color:var(--pr);background:#fff}
+input:focus,textarea:focus{border-color:var(--pr);background:var(--cd)}
 :focus-visible{outline:2px solid var(--pr);outline-offset:2px}
-.hd{display:flex;align-items:center;gap:12px;background:#fff;border-radius:22px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap}
+.hd{display:flex;align-items:center;gap:12px;background:var(--cd);border-radius:22px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap}
 .lg{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;letter-spacing:-.5px}
 .mk{width:38px;height:38px;border-radius:12px;background:var(--pr);display:grid;place-items:center;font-size:20px}
 .nv{display:flex;gap:8px;overflow-x:auto;flex:1;scrollbar-width:none;justify-content:center}
-.pill{flex:none;padding:10px 16px;border-radius:12px;border:1px solid var(--ln);background:#fff;color:var(--mu);font-weight:500;font-size:14px}
-.pill.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+.pill{flex:none;padding:10px 16px;border-radius:12px;border:1px solid var(--ln);background:var(--cd);color:var(--mu);font-weight:500;font-size:14px}
+.pill.on{background:var(--pr);color:var(--pt);border-color:var(--pr)}
 .rt{margin-left:auto;display:flex;gap:8px}
-.ib{height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:#fff;font-weight:600;font-size:14px}
+.ib{height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--cd);font-weight:600;font-size:14px}
 .lay{display:grid;gap:12px;grid-template-columns:1fr}
-.lay>section,.lay>aside,.pan{background:#fff;border-radius:22px;padding:18px}
+.lay>section,.lay>aside,.pan{background:var(--cd);border-radius:22px;padding:18px}
 .lay aside{display:none}
 @media(min-width:1000px){.lay{grid-template-columns:1fr 380px;align-items:start}.lay aside{display:block;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}#bar{display:none}}
 h2{margin:0;font-size:20px;letter-spacing:-.3px}
@@ -31,10 +31,10 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .se{max-width:260px}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
 .chip{flex:none;padding:9px 16px;border-radius:12px;background:var(--soft);font-size:14px;border:1.5px solid transparent}
-.chip.on{border-color:var(--pr);background:#fff;color:var(--pr);font-weight:600}
+.chip.on{border-color:var(--pr);background:var(--cd);color:var(--pr);font-weight:600}
 .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 .grid.k{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
-.card{border:1px solid var(--ln);border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.card{border:1px solid var(--ln);border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--cd)}
 .card.out .ph img,.card.out .ph span{opacity:.5}
 .ph{position:relative;aspect-ratio:1/.85;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:44px;overflow:hidden}
 .ph img{width:100%;height:100%;object-fit:cover}
@@ -44,11 +44,11 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .ft{display:flex;align-items:center;gap:8px;background:var(--soft);border-radius:14px;padding:8px;margin-top:auto}
 .ft small{display:block;color:var(--mu);font-size:11px}.ft b{font-size:18px;letter-spacing:-.5px}
 .ft>div:first-child{padding-left:4px}
-.add{flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--ln);background:#fff;font-weight:600;font-size:13px}
+.add{flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--ln);background:var(--cd);font-weight:600;font-size:13px}
 .add:disabled{opacity:.5}
 .qt{display:flex;align-items:center;gap:8px;margin-left:auto}
-.qt button{width:30px;height:30px;border-radius:8px;background:var(--pr);color:#fff;font-size:18px;font-weight:700;line-height:1}
-.qt button.m{background:#fff;color:var(--tx);border:1px solid var(--ln)}
+.qt button{width:30px;height:30px;border-radius:8px;background:var(--pr);color:var(--pt);font-size:18px;font-weight:700;line-height:1}
+.qt button.m{background:var(--cd);color:var(--tx);border:1px solid var(--ln)}
 .qt span{min-width:20px;text-align:center;font-weight:700}
 .box{border:1px solid var(--ln);border-radius:18px;padding:12px;margin:12px 0}
 .box h3{margin:0 0 8px;font-size:16px}
@@ -63,14 +63,14 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .th img{width:100%;height:100%;object-fit:cover}
 .sp{flex:1;min-width:0}.sp b{display:block;font-size:14px}.sp small{color:var(--mu);font-size:12px}
 .tt{background:var(--soft);border-radius:14px;padding:12px;display:flex;justify-content:space-between;font-size:17px;font-weight:700;margin-top:10px}
-.bt{width:100%;padding:15px;border-radius:14px;background:var(--pr);color:#fff;font-weight:700;margin-top:10px;display:flex;justify-content:center;gap:8px;box-shadow:0 3px 0 var(--pr2)}
+.bt{width:100%;padding:15px;border-radius:14px;background:var(--pr);color:var(--pt);font-weight:700;margin-top:10px;display:flex;justify-content:center;gap:8px;box-shadow:0 3px 0 var(--pr2)}
 .bt.s{justify-content:space-between}
 .bt:disabled{opacity:.45}
-.bt2{width:100%;padding:13px;border-radius:14px;background:#fff;border:1px solid var(--ln);font-weight:600;margin-top:8px}
+.bt2{width:100%;padding:13px;border-radius:14px;background:var(--cd);border:1px solid var(--ln);font-weight:600;margin-top:8px}
 .bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:5}
 .bar .bt{max-width:600px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
-.sheet{width:100%;max-width:520px;max-height:94vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet{width:100%;max-width:520px;max-height:94vh;overflow:auto;background:var(--cd);border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
 @media(min-width:700px){.ov{align-items:center}.sheet{border-radius:24px}}
 .tag{font-size:12px;padding:3px 10px;border-radius:99px;font-weight:600}
 .Baru{background:#fee2e2;color:#b91c1c}.Diproses{background:#fef3c7;color:#b45309}.Selesai{background:#dcfce7;color:#15803d}.Batal{background:var(--ln);color:var(--mu)}
@@ -84,7 +84,7 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .empty b{display:block;color:var(--tx);font-size:17px;margin-bottom:6px}
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#14201a;color:#fff;padding:10px 16px;border-radius:12px;z-index:40;font-size:13px;display:none;max-width:90%}
 .err{color:var(--bad);font-size:13px;margin-top:8px}
-.card1{background:#fff;border-radius:22px;padding:20px;max-width:400px;margin:40px auto}
+.card1{background:var(--cd);border-radius:22px;padding:20px;max-width:400px;margin:40px auto}
 
 .ft{flex-wrap:wrap;justify-content:space-between;gap:6px}
 .ft b{font-size:clamp(13px,1.15vw,16px);letter-spacing:-.3px}
@@ -93,8 +93,8 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .qt{margin-left:auto;gap:6px}.qt button{width:28px;height:28px}
 .r3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .r3 .add{width:auto;margin:0;font-size:13px;height:auto;padding:8px 4px}
-.pan{background:#fff;border-radius:22px;padding:18px}
-.big{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;background:linear-gradient(135deg,#2f5d34,#1f3d24);color:#fff}
+.pan{background:var(--cd);border-radius:22px;padding:18px}
+.big{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;color:var(--tx)}
 .big small{opacity:.8}.amt{font-size:clamp(24px,5vw,36px);font-weight:800;letter-spacing:-1px;margin:2px 0}
 .dg{display:grid;gap:12px;grid-template-columns:1fr}
 @media(min-width:1000px){.dg{grid-template-columns:2fr 1fr}}
@@ -112,6 +112,12 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .ft b{font-size:18px}
 .r3 .add{font-size:12px;padding:8px 2px}
 }
+.hd,.lay>section,.lay>aside,.pan,.card1{box-shadow:var(--sh)}
+.card{box-shadow:0 2px 10px rgba(0,0,0,.14)}
+.sheet{box-shadow:0 -4px 24px rgba(0,0,0,.25)}
+.bar{box-shadow:0 -3px 14px rgba(0,0,0,.14)}
+.amt{color:var(--pr)}
+.sk{height:14px;border-radius:6px;background:var(--soft)}
 </style>
 </head>
 <body>
@@ -141,9 +147,17 @@ async function api(act, body = {}) {
   if (j.error) throw new Error(j.error);
   return j;
 }
-let SET = { nama: "Warung Saya", logo: "", dAktif: false, dPersen: 0 };
+let SET = { nama: "Warung Saya", logo: "", dAktif: false, dPersen: 0, tema: null };
 try { SET = JSON.parse(localStorage.getItem("pos_set")) || SET; } catch (e) {}
-const setSet = x => { if (x) { SET = x; try { localStorage.setItem("pos_set", JSON.stringify(x)); } catch (e) {} } };
+const DT = { bg: "#ffffff", card: "#ffffff", pr: "#2f5d34", tx: "#14201a" };
+function applyTheme(t) {
+  t = { ...DT, ...(t || {}) }; const st = document.documentElement.style;
+  st.setProperty("--bg", t.bg); st.setProperty("--cd", t.card); st.setProperty("--pr", t.pr); st.setProperty("--tx", t.tx);
+  const n = parseInt(t.pr.slice(1), 16), L = .299 * (n >> 16) + .587 * ((n >> 8) & 255) + .114 * (n & 255);
+  st.setProperty("--pt", L > 160 ? "#111111" : "#ffffff");
+}
+applyTheme(SET.tema);
+const setSet = x => { if (x) { SET = x; applyTheme(x.tema); try { localStorage.setItem("pos_set", JSON.stringify(x)); } catch (e) {} } };
 const head = (nav, rt = "") => `<header class="hd"><div class="lg"><span class="mk" style="overflow:hidden">${SET.logo ? `<img src="${esc(SET.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span>${esc(SET.nama)}</div><div class="nv">${nav}</div><div class="rt">${rt}</div></header>`;
 function notConn() {
   $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Aplikasi belum terhubung</b>Admin: buka alamat ini dengan #admin, lalu isi pengaturan Sinkron Google Sheet.</div></div>`;
@@ -156,11 +170,43 @@ const tot = () => items().reduce((s, i) => s + i.qty * i.price, 0);
 const cnt = () => Object.values(CART).reduce((s, q) => s + q, 0);
 const pic = p => p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` : `<span>${emo(p.cat)}</span>`;
 
-async function cust() {
-  $("#app").innerHTML = head("") + `<div class="empty" style="color:#fff">Memuat menu…</div>`;
-  try { const r = await api("menu"); MENU = r.menu; setSet(r.set); } catch (e) { $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`; return; }
-  $("#app").innerHTML = head("", `<span style="color:var(--mu);font-size:13px;align-self:center">Pesan mandiri</span>`) + `<div class="lay"><section><div class="top"><h2>Menu</h2><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
+const LS = { get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+let MJ = "";
+const custHead = () => head("", `<span style="color:var(--mu);font-size:13px;align-self:center">Pesan mandiri</span>`);
+function attachPh() { MENU.forEach(p => { if (p.pv) { const c = LS.get("ph:" + p.id); p.photo = c && c.v == p.pv ? c.d : ""; } }); }
+function fixCart() { Object.keys(CART).forEach(id => { const p = MENU.find(x => x.id == id); if (!p || p.stock < 1) delete CART[id]; else if (CART[id] > p.stock) CART[id] = p.stock; }); }
+function showMenu() {
+  fixCart(); attachPh();
+  if (!$("#gr")) {
+    $("#app").innerHTML = custHead() + `<div class="lay"><section><div class="top"><h2>Menu</h2><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
+  }
   drawChips(); drawGrid(); drawPanel();
+}
+async function loadPhotos() {
+  const need = MENU.filter(p => p.pv && !p.photo).map(p => p.id);
+  for (let i = 0; i < need.length; i += 6) {
+    try {
+      const ids = need.slice(i, i + 6), r = await api("photos", { ids });
+      ids.forEach(id => { const p = MENU.find(x => x.id == id), d = r.photos[id]; if (p && d) { p.photo = d; LS.set("ph:" + id, { v: p.pv, d }); } });
+      drawGrid();
+    } catch (e) { break; }
+  }
+}
+async function cust() {
+  $("#dlg").innerHTML = "";
+  const c = LS.get("pos_menu"); let shown = false;
+  if (c && c.length) { MENU = c; MJ = JSON.stringify(c); showMenu(); shown = true; }
+  else $("#app").innerHTML = custHead() + `<div class="lay"><section><h2>Menu</h2><div class="grid" style="margin-top:14px">${`<div class="card"><div class="ph"></div><div class="sk"></div><div class="sk" style="width:60%"></div></div>`.repeat(6)}</div></section></div>`;
+  try {
+    const r = await api("menu"); setSet(r.set);
+    const h = $(".hd"); if (h) h.outerHTML = custHead();
+    const js = JSON.stringify(r.menu);
+    if (js != MJ || !shown) { MJ = js; MENU = r.menu; LS.set("pos_menu", MENU); showMenu(); }
+    loadPhotos();
+  } catch (e) {
+    if (!shown) $("#app").innerHTML = custHead() + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`;
+    else toast("Offline, memakai menu tersimpan");
+  }
 }
 function drawChips() {
   const cats = ["Semua", ...new Set(MENU.map(p => p.cat).filter(Boolean))];
@@ -217,7 +263,7 @@ function doLogin() { KEY = $("#k").value.trim(); AC = AC || new (window.AudioCon
 async function poll(first) {
   try {
     ORD = (await api("orders", { key: KEY })).orders;
-    sessionStorage.setItem("pos_key", KEY);
+    sessionStorage.setItem("pos_key", KEY); if (first) api("menu").then(r => { setSet(r.set); drawK(); }).catch(() => {});
     const fresh = ORD.filter(o => o.status == "Baru" && SEEN && !SEEN.has(o.id));
     SEEN = new Set(ORD.map(o => o.id));
     if (fresh.length) alarm(fresh);
@@ -267,6 +313,8 @@ const sm = a => a.reduce((s, x) => s + x, 0);
 const fmt = n => n >= 1e6 ? +(n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n));
 let AK = sessionStorage.getItem("pos_akey") || "", AM = [], AORD = [], PG = "Dashboard", CHM = "rev", HID = localStorage.getItem("pos_hide") == "1", APL = null, MF = null, ST = null, SF = null;
 let DR = { from: dstr(Date.now() - 6 * 864e5), to: dstr(Date.now()) };
+const PRESETS = [["Hijau", { bg: "#ffffff", card: "#ffffff", pr: "#2f5d34", tx: "#14201a" }], ["Biru", { bg: "#f4f8ff", card: "#ffffff", pr: "#2563eb", tx: "#0f172a" }], ["Oranye", { bg: "#fff8f1", card: "#ffffff", pr: "#ea580c", tx: "#1f1410" }], ["Merah", { bg: "#ffffff", card: "#ffffff", pr: "#dc2626", tx: "#1f1111" }], ["Ungu", { bg: "#faf7ff", card: "#ffffff", pr: "#7c3aed", tx: "#17102a" }], ["Gelap", { bg: "#0f172a", card: "#1e293b", pr: "#22c55e", tx: "#f1f5f9" }]];
+const setTema = i => { SF.tema = { ...PRESETS[i][1] }; applyTheme(SF.tema); drawA(); };
 const closeD = () => $("#dlg").innerHTML = "";
 function readImg(f, max, cb, type) {
   if (!f) return; const r = new FileReader();
@@ -305,8 +353,10 @@ async function aload() {
 async function apoll() {
   if (!AK) return;
   try {
-    const o = await api("orders", { key: AK, all: true }), fresh = o.orders.filter(x => x.status == "Baru" && SEEN && !SEEN.has(x.id));
-    SEEN = new Set(o.orders.map(x => x.id)); ORD = AORD = o.orders;
+    const o = await api("orders", { key: AK }), m = new Map(AORD.map(x => [x.id, x]));
+    const fresh = o.orders.filter(x => x.status == "Baru" && SEEN && !SEEN.has(x.id));
+    o.orders.forEach(x => { m.set(x.id, x); SEEN.add(x.id); });
+    ORD = AORD = [...m.values()].sort((a, b) => a.ts - b.ts);
     if (fresh.length) alarm(fresh);
     if (!$("#dlg").innerHTML && (PG == "Dashboard" || PG == "Order")) drawA();
   } catch (e) {}
@@ -327,10 +377,10 @@ function smooth(p) {
 function chart(days, vals, rpm) {
   const W = 640, H = 240, L = 44, B = 28, T = 12, R = 12, mx = Math.max(...vals, 1), n = days.length;
   const X = i => L + (n < 2 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)), Y = v => T + (H - T - B) * (1 - v / mx), P = vals.map((v, i) => [X(i), Y(v)]);
-  const grid = [0, .25, .5, .75, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${Y(mx * f)}" y2="${Y(mx * f)}" stroke="#e6e9e3"/><text x="${L - 6}" y="${Y(mx * f) + 4}" text-anchor="end" font-size="11" fill="#6b7770">${fmt(mx * f)}</text>`).join("");
-  const st = Math.ceil(n / 6), xl = days.map((d, i) => i % st == 0 ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#6b7770">${d.slice(8)}/${d.slice(5, 7)}</text>` : "").join("");
+  const grid = [0, .25, .5, .75, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${Y(mx * f)}" y2="${Y(mx * f)}" style="stroke:var(--ln)"/><text x="${L - 6}" y="${Y(mx * f) + 4}" text-anchor="end" font-size="11" style="fill:var(--mu)">${fmt(mx * f)}</text>`).join("");
+  const st = Math.ceil(n / 6), xl = days.map((d, i) => i % st == 0 ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" style="fill:var(--mu)">${d.slice(8)}/${d.slice(5, 7)}</text>` : "").join("");
   const ln = n > 1 ? smooth(P) : "";
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Grafik">${grid}${xl}${n > 1 ? `<path d="${ln} L${P[n - 1][0]},${Y(0)} L${P[0][0]},${Y(0)}Z" fill="rgba(47,93,52,.12)"/><path d="${ln}" fill="none" stroke="#2f5d34" stroke-width="3" stroke-linecap="round"/>` : ""}${n <= 45 ? P.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#2f5d34" stroke-width="2"><title>${days[i]}: ${rpm ? rp(vals[i]) : vals[i] + " produk"}</title></circle>`).join("") : ""}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Grafik">${grid}${xl}${n > 1 ? `<path d="${ln} L${P[n - 1][0]},${Y(0)} L${P[0][0]},${Y(0)}Z" style="fill:var(--pr);fill-opacity:.12"/><path d="${ln}" fill="none" style="stroke:var(--pr)" stroke-width="3" stroke-linecap="round"/>` : ""}${n <= 45 ? P.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="4" style="fill:var(--cd);stroke:var(--pr)" stroke-width="2"><title>${days[i]}: ${rpm ? rp(vals[i]) : vals[i] + " produk"}</title></circle>`).join("") : ""}</svg>`;
 }
 function pDash() {
   const ok = AORD.filter(o => o.status != "Batal"), td = dstr(Date.now()), tdo = ok.filter(o => dstr(o.ts) == td), rev = sm(tdo.map(o => o.total));
@@ -379,10 +429,14 @@ function pSet() {
   const conn = `<section class="pan" style="margin-top:${AK ? 12 : 0}px"><h2>Sinkron Google Sheet</h2><p style="color:var(--mu);font-size:13px;margin:4px 0">Status: ${URLX ? (AK ? "Terhubung ✓" : "Belum masuk") : "Belum terhubung"}</p><div class="fl"><label>URL Web App (Apps Script)</label><input id="cu" value="${esc(URLX)}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="fl"><label>Kode admin</label><input id="ck" type="password" value="${esc(AK)}"></div><div class="r2"><button class="bt" style="margin:0" onclick="aconnect()">Hubungkan</button><button class="bt2" style="margin:0" onclick="adisc()">Putuskan</button></div>${URLX ? `<div class="r2" style="margin-top:8px"><button class="bt2" style="margin:0" onclick="copyL('')">Salin tautan customer</button><button class="bt2" style="margin:0" onclick="copyL('#kasir')">Salin tautan kasir</button></div>` : ""}</section>`;
   if (!AK) return conn;
   SF = SF || { ...SET };
+  SF.tema = { ...DT, ...(SF.tema || {}) };
   return `<section class="pan"><h2>Pengaturan Toko</h2><div class="fl" style="margin-top:12px"><label>Nama toko</label><input value="${esc(SF.nama)}" oninput="SF.nama=this.value"></div>
   <div class="fl"><label>Logo toko</label><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="mk" style="width:48px;height:48px;overflow:hidden;flex:none">${SF.logo ? `<img src="${esc(SF.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span><input type="file" accept="image/*" onchange="readImg(this.files[0],160,d=>{SF.logo=d;drawA()},'image/png')">${SF.logo ? `<button class="ib" onclick="SF.logo='';drawA()">Hapus</button>` : ""}</div></div>
   <h3 style="margin:16px 0 6px">Diskon</h3><label class="fl" style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${SF.dAktif ? "checked" : ""} onchange="SF.dAktif=this.checked">Aktifkan diskon untuk semua menu</label>
   <div class="fl"><label>Besar diskon (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${SF.dPersen}" oninput="SF.dPersen=+this.value"></div><small style="color:var(--mu)">Menu yang punya diskon sendiri memakai diskonnya sendiri.</small>
+  <h3 style="margin:16px 0 6px">Warna Tampilan</h3><div class="chips">${PRESETS.map((p, i) => `<button class="chip" onclick="setTema(${i})">${p[0]}</button>`).join("")}</div>
+  <div class="r2">${[["bg", "Background halaman"], ["card", "Background kartu"], ["pr", "Tombol & aksen"], ["tx", "Warna teks"]].map(([k, l]) => `<div class="fl"><label>${l}</label><input type="color" value="${SF.tema[k]}" style="height:38px;cursor:pointer" oninput="SF.tema.${k}=this.value;applyTheme(SF.tema)"></div>`).join("")}</div>
+  <button class="bt2" style="margin-top:0" onclick="SF.tema={...DT};applyTheme(SF.tema);drawA()">Kembalikan warna awal</button>
   <button class="bt" id="ss" onclick="saveSet()">Simpan pengaturan</button></section>` + conn;
 }
 async function saveSet() {
