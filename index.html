@@ -418,7 +418,7 @@ async function apoll() {
 }
 function alogout() { AK = ""; sessionStorage.removeItem("pos_akey"); clearInterval(APL); APL = null; alogin(); }
 // const AIC = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
-const AIC = { Dashboard:, Menu:, Order:, Setting:};
+const AIC = { Dashboard: "", Menu: "", Order: "", Setting: "" };
 const HB = `<button class="ib hb" aria-label="Buka menu" aria-controls="drw" onclick="drw(1)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>`;
 const drw = o => { $("#drw").classList.toggle("open", !!o); document.body.style.overflow = o ? "hidden" : ""; };
 const goA = p => { PG = p; drw(0); drawA(); };
