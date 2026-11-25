@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pesan Makanan</title>
+<style>
+:root{--bg:#f3f5f9;--cd:#fff;--tx:#0f172a;--mu:#64748b;--ln:#e4e8f0;--pr:#2563eb;--ok:#16a34a;--bad:#dc2626;--wn:#d97706;--sh:0 2px 14px rgba(0,0,0,.13);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b1120;--cd:#151d31;--tx:#e8edf7;--mu:#8b97ad;--ln:#243049;--sh:0 2px 14px rgba(0,0,0,.6)}}
+:root[data-theme=dark]{--bg:#0b1120;--cd:#151d31;--tx:#e8edf7;--mu:#8b97ad;--ln:#243049;--sh:0 2px 14px rgba(0,0,0,.6)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.4 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{max-width:1100px;margin:0 auto;padding:18px 16px 120px;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,textarea{font:inherit;color:var(--tx);width:100%;padding:11px 12px;border:1px solid var(--ln);border-radius:12px;background:var(--cd);outline:0}
+input:focus,textarea:focus{border-color:var(--pr)}
+:focus-visible{outline:2px solid var(--pr);outline-offset:2px}
+label{display:block;font-size:12px;color:var(--mu);margin:12px 0 5px}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.hd h1{margin:0;font-size:24px;letter-spacing:-.5px}
+.hd small{color:var(--mu);font-size:12px;display:block}
+.ib{min-width:44px;height:44px;padding:0 12px;border-radius:14px;background:var(--cd);box-shadow:var(--sh);display:grid;place-items:center;font-size:14px;font-weight:600;color:var(--pr)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chip{flex:none;padding:8px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--cd);font-size:13px}
+.chip.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
+.grid.k{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{background:var(--cd);border-radius:18px;box-shadow:var(--sh);padding:12px;display:flex;flex-direction:column;gap:6px}
+.card.out{opacity:.5}
+.ph{aspect-ratio:4/3;border-radius:12px;background:var(--ln);display:grid;place-items:center;font-size:34px;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover}
+.card b{font-size:14px}
+.card small{color:var(--mu);font-size:12px}
+.pr{color:var(--pr);font-weight:700}
+.qt{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:4px}
+.qt button{width:34px;height:34px;border-radius:10px;background:var(--pr);color:#fff;font-size:18px;font-weight:700}
+.qt button.m{background:var(--bg);color:var(--tx);border:1px solid var(--ln)}
+.qt span{font-weight:700;min-width:24px;text-align:center}
+.add{width:100%;padding:9px;border-radius:10px;background:var(--bg);border:1px solid var(--pr);color:var(--pr);font-weight:700;margin-top:auto}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--cd);border-top:1px solid var(--ln);z-index:5}
+.bar>div{max-width:1100px;margin:0 auto}
+.bt{width:100%;padding:14px;border-radius:14px;background:var(--pr);color:#fff;font-weight:700;display:flex;justify-content:space-between}
+.bt.c{justify-content:center}
+.bt:disabled{opacity:.45}
+.bt2{width:100%;padding:13px;border-radius:14px;background:var(--bg);font-weight:600;margin-top:8px;border:1px solid var(--ln)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:520px;max-height:94vh;overflow:auto;background:var(--bg);border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:24px}}
+.sheet h2{margin:0 0 4px;font-size:18px}
+.li{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln)}
+.li:last-child{border:0}.sp{flex:1;min-width:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tag{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:700}
+.Baru{background:#fee2e2;color:#b91c1c}.Diproses{background:#fef3c7;color:#b45309}.Selesai{background:#dcfce7;color:#15803d}.Batal{background:var(--ln);color:var(--mu)}
+.card.new{border:2px solid var(--bad);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(220,38,38,.25)}}
+@media(prefers-reduced-motion:reduce){.card.new{animation:none}}
+.meja{font-size:26px;font-weight:800;letter-spacing:-1px}
+.ban{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:480px;background:var(--bad);color:#fff;border-radius:16px;padding:14px 16px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.35);text-align:left}
+.empty{text-align:center;padding:40px 10px;color:var(--mu)}
+.empty b{display:block;color:var(--tx);font-size:17px;margin-bottom:6px}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;z-index:40;font-size:13px;display:none;max-width:90%}
+.err{color:var(--bad);font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="toast"></div>
+<script>
+/* ===== PENGATURAN: tempel URL Web App Google Apps Script di sini ===== */
+const API_URL = "";
+/* Customer: buka index.html   |   Kasir: buka index.html#kasir */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const rp = n => "Rp" + Math.round(n || 0).toLocaleString("id-ID");
+const emo = c => ({ pempek: "🍢", bento: "🍱", minuman: "🥤" }[(c || "").toLowerCase()] || "🍽️");
+let URLX = API_URL || localStorage.getItem("pos_url") || "";
+let KASIR = location.hash.startsWith("#kasir");
+addEventListener("hashchange", () => location.reload());
+
+function toast(m) { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2600); }
+async function api(act, body = {}) {
+  const r = await fetch(URLX, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ act, ...body }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+function setup() {
+  $("#app").innerHTML = `<div class="hd"><h1>Hubungkan Google Sheet</h1></div><div class="card"><label>URL Web App (Apps Script)</label><input id="u" placeholder="https://script.google.com/macros/s/.../exec"><button class="bt c" style="margin-top:12px" onclick="saveUrl()">Simpan</button></div>`;
+}
+function saveUrl() {
+  const u = $("#u").value.trim();
+  if (!/^https:\/\/script\.google\.com\//.test(u)) return toast("URL Web App tidak valid");
+  localStorage.setItem("pos_url", u); location.reload();
+}
+
+/* ================= CUSTOMER ================= */
+let MENU = [], CAT = "Semua", CART = {}, F = JSON.parse(sessionStorage.getItem("pos_f") || '{"meja":"","nama":"","telp":"","note":""}');
+const items = () => MENU.filter(p => CART[p.id]).map(p => ({ ...p, qty: CART[p.id] }));
+const tot = () => items().reduce((s, i) => s + i.qty * i.price, 0);
+const cnt = () => Object.values(CART).reduce((s, q) => s + q, 0);
+
+async function cust() {
+  $("#app").innerHTML = `<div class="empty">Memuat menu…</div>`;
+  try { MENU = (await api("menu")).menu; } catch (e) { $("#app").innerHTML = `<div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt2" onclick="cust()">Coba lagi</button></div>`; return; }
+  drawC();
+}
+function drawC() {
+  const cats = ["Semua", ...new Set(MENU.map(p => p.cat).filter(Boolean))];
+  const list = MENU.filter(p => CAT == "Semua" || p.cat == CAT);
+  $("#app").innerHTML = `<div class="hd"><div><h1>Menu</h1><small>Pilih makanan lalu kirim pesanan</small></div></div>
+  <div class="chips">${cats.map(c => `<button class="chip ${c == CAT ? "on" : ""}" onclick="CAT='${esc(c)}';drawC()">${esc(c)}</button>`).join("")}</div>
+  <div class="grid">${list.map(p => { const q = CART[p.id] || 0, out = p.stock < 1; return `<div class="card ${out ? "out" : ""}"><div class="ph">${p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` : emo(p.cat)}</div><b>${esc(p.name)}</b><span class="pr">${rp(p.price)}</span><small>${out ? "Habis" : "Stok " + p.stock}</small>${out ? "" : q ? `<div class="qt"><button class="m" aria-label="Kurangi" onclick="chg('${p.id}',-1)">−</button><span>${q}</span><button aria-label="Tambah" onclick="chg('${p.id}',1)">+</button></div>` : `<button class="add" onclick="chg('${p.id}',1)">Tambah</button>`}</div>`; }).join("") || `<div class="empty">Belum ada menu</div>`}</div>
+  ${cnt() ? `<div class="bar"><div><button class="bt" onclick="checkout()"><span>${cnt()} item</span><span>Lihat pesanan · ${rp(tot())}</span></button></div></div>` : ""}`;
+}
+function chg(id, d) {
+  const p = MENU.find(x => x.id == id), q = (CART[id] || 0) + d;
+  if (q > p.stock) return toast("Stok tinggal " + p.stock);
+  if (q < 1) delete CART[id]; else CART[id] = q;
+  drawC(); if ($("#dlg").innerHTML) checkout();
+}
+function fin(k, v) { F[k] = v; sessionStorage.setItem("pos_f", JSON.stringify(F)); }
+function checkout(err) {
+  $("#dlg").innerHTML = `<div class="ov" onclick="if(event.target==this)dc()"><div class="sheet"><h2>Pesanan Anda</h2>
+  ${items().map(i => `<div class="li"><div class="sp"><b>${esc(i.name)}</b><br><small style="color:var(--mu)">${rp(i.price)}</small></div><div class="qt" style="gap:8px"><button class="m" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--ln);background:var(--bg);color:var(--tx)" onclick="chg('${i.id}',-1)">−</button><span>${i.qty}</span><button style="width:30px;height:30px;border-radius:9px;background:var(--pr);color:#fff" onclick="chg('${i.id}',1)">+</button></div></div>`).join("")}
+  <div class="li"><b class="sp">Total</b><b class="pr">${rp(tot())}</b></div>
+  <div class="row2"><div><label>Nomor bangku</label><input value="${esc(F.meja)}" inputmode="numeric" oninput="fin('meja',this.value)"></div><div><label>Nama</label><input value="${esc(F.nama)}" autocomplete="name" oninput="fin('nama',this.value)"></div></div>
+  <label>No. telepon</label><input type="tel" inputmode="tel" value="${esc(F.telp)}" autocomplete="tel" oninput="fin('telp',this.value)">
+  <label>Catatan (opsional)</label><textarea rows="2" oninput="fin('note',this.value)">${esc(F.note)}</textarea>
+  ${err ? `<div class="err">${esc(err)}</div>` : ""}
+  <button class="bt c" id="sb" style="margin-top:14px" onclick="send()">Kirim pesanan</button><button class="bt2" onclick="dc()">Tambah menu lain</button></div></div>`;
+}
+const dc = () => $("#dlg").innerHTML = "";
+async function send() {
+  if (!F.meja.trim() || !F.nama.trim() || !F.telp.trim()) return checkout("Isi nomor bangku, nama, dan no. telepon");
+  if (!/^[0-9+\-\s]{8,16}$/.test(F.telp.trim())) return checkout("No. telepon tidak valid");
+  const b = $("#sb"); b.disabled = true; b.textContent = "Mengirim…";
+  try {
+    const r = await api("order", { ...F, items: items().map(i => ({ id: i.id, qty: i.qty })) });
+    CART = {}; dc();
+    $("#app").innerHTML = `<div class="empty" style="padding-top:80px"><div style="font-size:56px">✅</div><b>Pesanan terkirim</b>Nomor pesanan <b style="display:inline">${esc(r.id)}</b> untuk bangku ${esc(F.meja)}.<br>Kasir sudah diberi tahu. Total ${rp(r.total)}.<button class="bt c" style="max-width:320px;margin:20px auto 0" onclick="cust()">Pesan lagi</button></div>`;
+  } catch (e) { checkout(e.message); }
+}
+
+/* ================= KASIR ================= */
+let KEY = sessionStorage.getItem("pos_key") || "", ORD = [], SEEN = null, FIL = "Aktif", AC = null, MUTE = false, TT = null, POLL = null;
+function login(err) {
+  $("#app").innerHTML = `<div class="hd"><h1>Kasir</h1></div><div class="card" style="max-width:380px;margin:0 auto"><label>Kode kasir</label><input id="k" type="password" onkeydown="if(event.key=='Enter')doLogin()">${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt c" style="margin-top:12px" onclick="doLogin()">Masuk &amp; aktifkan suara</button></div>`;
+}
+function doLogin() { KEY = $("#k").value.trim(); AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); if ("Notification" in window && Notification.permission == "default") Notification.requestPermission(); poll(true); }
+async function poll(first) {
+  try {
+    ORD = (await api("orders", { key: KEY })).orders;
+    sessionStorage.setItem("pos_key", KEY);
+    const fresh = ORD.filter(o => o.status == "Baru" && SEEN && !SEEN.has(o.id));
+    SEEN = new Set(ORD.map(o => o.id));
+    if (fresh.length) alarm(fresh);
+    drawK();
+    if (!POLL) POLL = setInterval(poll, 5000);
+  } catch (e) { if (first || /kode/i.test(e.message)) { sessionStorage.removeItem("pos_key"); clearInterval(POLL); POLL = null; login(e.message); } else toast("Koneksi terputus, mencoba lagi…"); }
+}
+function beep() {
+  if (!AC || MUTE) return;
+  [0, .28, .56].forEach((t, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = i == 1 ? 1175 : 880; o.type = "sine"; g.gain.setValueAtTime(.0001, AC.currentTime + t); g.gain.exponentialRampToValueAtTime(.5, AC.currentTime + t + .03); g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + t + .25); o.connect(g).connect(AC.destination); o.start(AC.currentTime + t); o.stop(AC.currentTime + t + .26); });
+}
+function alarm(f) {
+  const o = f[0], msg = `Pesanan baru dari bangku ${o.meja} (${o.nama})` + (f.length > 1 ? ` dan ${f.length - 1} lainnya` : "");
+  beep(); setTimeout(beep, 1500);
+  if (!MUTE && "speechSynthesis" in window) { const u = new SpeechSynthesisUtterance(msg); u.lang = "id-ID"; speechSynthesis.speak(u); }
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  if ("Notification" in window && Notification.permission == "granted" && document.hidden) new Notification("Pesanan baru", { body: msg });
+  $("#ban").innerHTML = `<button class="ban" onclick="this.remove()"><b>🔔 ${esc(msg)}</b><br><small>${rp(o.total)} · ketuk untuk menutup</small></button>`;
+  const t0 = document.title; let n = 0; clearInterval(TT);
+  TT = setInterval(() => { document.title = n++ % 2 ? t0 : "🔔 PESANAN BARU"; if (n > 12) { clearInterval(TT); document.title = t0; } }, 800);
+}
+const hhmm = t => new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+async function setSt(id, s) {
+  try { await api("status", { key: KEY, id, status: s }); ORD.find(o => o.id == id).status = s; drawK(); } catch (e) { toast(e.message); }
+}
+function drawK() {
+  const act = o => o.status == "Baru" || o.status == "Diproses";
+  const L = ORD.filter(o => FIL == "Aktif" ? act(o) : FIL == "Semua" ? true : o.status == FIL).slice().reverse();
+  const n = s => ORD.filter(o => o.status == s).length;
+  $("#app").innerHTML = `<div class="hd"><div><h1>Pesanan Masuk</h1><small>${n("Baru")} baru · ${n("Diproses")} diproses · diperbarui otomatis</small></div><button class="ib" onclick="MUTE=!MUTE;if(!MUTE){AC&&AC.resume();beep()}drawK()">${MUTE ? "🔇 Mati" : "🔊 Suara"}</button></div>
+  <div class="chips">${["Aktif", "Baru", "Diproses", "Selesai", "Batal", "Semua"].map(f => `<button class="chip ${f == FIL ? "on" : ""}" onclick="FIL='${f}';drawK()">${f}</button>`).join("")}</div>
+  <div class="grid k">${L.map(o => `<div class="card ${o.status == "Baru" ? "new" : ""}"><div style="display:flex;justify-content:space-between;align-items:center"><span class="meja">Bangku ${esc(o.meja)}</span><span class="tag ${o.status}">${o.status}</span></div>
+  <small>${esc(o.id)} · ${hhmm(o.ts)} · ${esc(o.nama)} · <a href="tel:${esc(o.telp)}" style="color:var(--pr)">${esc(o.telp)}</a></small>
+  <div>${o.items.map(i => `<div class="li" style="padding:5px 0"><b class="sp" style="font-weight:600">${i.qty}× ${esc(i.name)}</b><span>${rp(i.qty * i.price)}</span></div>`).join("")}</div>
+  ${o.note ? `<small>📝 ${esc(o.note)}</small>` : ""}<div class="li" style="border:0"><b class="sp">Total</b><b class="pr">${rp(o.total)}</b></div>
+  <div class="row2">${o.status == "Baru" ? `<button class="bt c" onclick="setSt('${o.id}','Diproses')">Proses</button><button class="bt2" style="margin:0" onclick="if(confirm('Batalkan pesanan ini?'))setSt('${o.id}','Batal')">Batal</button>` : o.status == "Diproses" ? `<button class="bt c" style="background:var(--ok)" onclick="setSt('${o.id}','Selesai')">Selesai</button><button class="bt2" style="margin:0" onclick="if(confirm('Batalkan pesanan ini?'))setSt('${o.id}','Batal')">Batal</button>` : ""}</div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada pesanan</b>Pesanan baru muncul di sini dengan bunyi notifikasi.</div>`}</div>`;
+}
+
+addEventListener("pointerdown", () => { if (KASIR && !AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC) AC.resume(); });
+/* ================= START ================= */
+if (!URLX) setup();
+else if (KASIR) { if (KEY) { AC = null; poll(true); } else login(); }
+else cust();
+</script>
+</body>
+</html>
