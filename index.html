@@ -315,7 +315,10 @@ async function setSt(id, s) {
 }
 /* ===== PEMBAYARAN ===== */
 const PAID = new Set(LS.get("pos_paid") || []);
-const isPaid = o => o.status == "Lunas" || PAID.has(o.id);
+const PAYD = LS.get("pos_pay") || {};
+const payInfo = o => o.metode ? { m: o.metode, b: +o.bayar || 0, k: +o.kembali || 0 } : (PAYD[o.id] || null);
+const payTxt = o => { const pi = payInfo(o); return pi ? [`Pembayaran: ${pi.m} (LUNAS)`, ...(pi.m == "Cash" ? [`Tunai: ${rp(pi.b)}`, `Kembali: ${rp(pi.k)}`] : [])] : ["LUNAS"]; };
+const isPaid = o => o.status == "Lunas" || PAID.has(o.id) || !!PAYD[o.id];
 const stx = o => o.status == "Selesai" || o.status == "Lunas" ? (isPaid(o) ? "Lunas" : "Belum Dibayar") : o.status;
 const tg = o => `<span class="tag ${stx(o).replace(/ /g, "")}">${stx(o)}</span>`;
 const mt = (o, f) => f == "Semua" ? true : f == "Aktif" ? (o.status == "Baru" || o.status == "Diproses") : stx(o) == f;
@@ -325,23 +328,43 @@ function todayBox(L) {
   return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(sm(pd.map(o => o.total)))}</div><small>${pd.length} pesanan lunas · ${un.length} belum dibayar${HID ? "" : " (" + rp(sm(un.map(o => o.total))) + ")"}</small></div><button class="ib" style="color:var(--tx)" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);REDRAW()">${HID ? "👁️ Tampilkan" : "🙈 Sembunyikan"}</button></section>`;
 }
 function struk(o) {
-  const hr = `<hr style="border:0;border-top:1px dashed currentColor;margin:6px 0">`, p = isPaid(o);
+  const hr = `<hr style="border:0;border-top:1px dashed currentColor;margin:6px 0">`, p = isPaid(o), pi = payInfo(o);
   const ln = (a, b, bd) => `<div style="display:flex;justify-content:space-between;gap:8px;${bd ? "font-weight:700" : ""}"><span>${a}</span><span>${b}</span></div>`;
-  return `<div style="text-align:center;font-weight:700;font-size:15px">${esc(SET.nama)}</div><div style="text-align:center">Struk Pembayaran</div>${hr}${ln("No", esc(o.id))}${ln("Waktu", fdt(o.ts))}${ln("Bangku", esc(o.meja))}${ln("Nama", esc(o.nama))}${hr}${o.items.map(i => `<div>${esc(i.name)}</div>` + ln(i.qty + " x " + rp(i.price), rp(i.qty * i.price))).join("")}${hr}${ln("TOTAL", rp(o.total), 1)}${p ? ln("Bayar", "Cash") : ""}${ln("Status", p ? "LUNAS" : "BELUM DIBAYAR")}${o.note ? `<div>Catatan: ${esc(o.note)}</div>` : ""}${hr}<div style="text-align:center">Terima kasih</div>`;
+  return `<div style="text-align:center;font-weight:700;font-size:15px">${esc(SET.nama)}</div><div style="text-align:center">Struk Pembayaran</div>${hr}${ln("No", esc(o.id))}${ln("Waktu", fdt(o.ts))}${ln("Bangku", esc(o.meja))}${ln("Nama", esc(o.nama))}${hr}${o.items.map(i => `<div>${esc(i.name)}</div>` + ln(i.qty + " x " + rp(i.price), rp(i.qty * i.price))).join("")}${hr}${ln("TOTAL", rp(o.total), 1)}${p && pi ? ln("Metode", pi.m) + (pi.m == "Cash" ? ln("Tunai", rp(pi.b)) + ln("Kembali", rp(pi.k)) : "") : ""}${ln("Status", p ? "LUNAS" : "BELUM DIBAYAR")}${o.note ? `<div>Catatan: ${esc(o.note)}</div>` : ""}${hr}<div style="text-align:center">Terima kasih</div>`;
 }
-const strukTxt = o => [`*${SET.nama}*`, "Struk Pembayaran", `No: ${o.id}`, `Waktu: ${fdt(o.ts)}`, `Bangku ${o.meja} · ${o.nama}`, "------------------", ...o.items.map(i => `${i.qty}x ${i.name} - ${rp(i.qty * i.price)}`), "------------------", `*Total: ${rp(o.total)}*`, "Pembayaran: Cash (LUNAS)", "", "Terima kasih sudah memesan!"].join("\n");
+const strukTxt = o => [`*${SET.nama}*`, "Struk Pembayaran", `No: ${o.id}`, `Waktu: ${fdt(o.ts)}`, `Bangku ${o.meja} · ${o.nama}`, "------------------", ...o.items.map(i => `${i.qty}x ${i.name} - ${rp(i.qty * i.price)}`), "------------------", `*Total: ${rp(o.total)}*`, ...payTxt(o), "", "Terima kasih sudah memesan!"].join("\n");
 const waNum = t => { let n = String(t || "").replace(/\D/g, ""); if (n.startsWith("0")) n = "62" + n.slice(1); else if (n.startsWith("8")) n = "62" + n; return n; };
 const sendWA = id => { const o = ORD.find(x => x.id == id); if (o) window.open("https://wa.me/" + waNum(o.telp) + "?text=" + encodeURIComponent(strukTxt(o)), "_blank"); };
 function printStruk(id) { const o = ORD.find(x => x.id == id); if (!o) return; $("#prt").innerHTML = struk(o); window.print(); }
+let PY = { id: "", m: "Cash", b: "", t: 0 };
 function openPay(id) {
-  const o = ORD.find(x => x.id == id); if (!o) return; const p = isPaid(o);
-  $("#dlg").innerHTML = `<div class="ov" onclick="if(event.target==this)closeD()"><div class="sheet" style="max-width:400px"><div style="background:var(--soft);border-radius:14px;padding:14px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace">${struk(o)}</div>${p ? `<div class="r2"><button class="bt" style="margin:12px 0 0;background:#25d366;color:#fff;box-shadow:none" onclick="sendWA('${id}')">Kirim WhatsApp</button><button class="bt" style="margin:12px 0 0" onclick="printStruk('${id}')">Cetak struk</button></div>` : `<button class="bt" id="pyb" onclick="payCash('${id}')">💵 Bayar Cash ${rp(o.total)}</button>`}<button class="bt2" onclick="closeD()">Tutup</button></div></div>`;
-}
-async function payCash(id) {
   const o = ORD.find(x => x.id == id); if (!o) return;
-  const b = $("#pyb"); if (b) { b.disabled = true; b.textContent = "Memproses…"; }
-  try { await api("status", { key: MODE == "admin" ? AK : KEY, id, status: "Lunas" }); o.status = "Lunas"; }
-  catch (e) { PAID.add(id); LS.set("pos_paid", [...PAID]); toast("Lunas tersimpan di perangkat ini saja (server belum menerima status Lunas)"); }
+  if (!isPaid(o)) PY = { id, m: "Cash", b: "", t: o.total };
+  drawPay(id);
+}
+const setPM = m => { PY.m = m; drawPay(PY.id); };
+function pyUp() {
+  const b = +PY.b || 0, k = b - PY.t, e = $("#pyk"), bt = $("#pyb");
+  if (e) e.textContent = !b ? "-" : k >= 0 ? rp(k) : "Kurang " + rp(-k);
+  if (bt) bt.disabled = PY.m == "Cash" && b < PY.t;
+}
+const pyQ = v => { PY.b = String(v); const i = $("#pyi"); if (i) i.value = PY.b; pyUp(); };
+function drawPay(id) {
+  const o = ORD.find(x => x.id == id); if (!o) return; const p = isPaid(o);
+  const pm = ["Cash", "QRIS"].map(m => `<button class="pill ${PY.m == m ? "on" : ""}" style="flex:1" onclick="setPM('${m}')">${m == "Cash" ? "💵 Cash" : "📱 QRIS"}</button>`).join("");
+  const cash = `<div class="fl" style="margin-top:10px"><label>Uang diterima (Rp)</label><input id="pyi" type="number" inputmode="numeric" min="0" value="${esc(PY.b)}" oninput="PY.b=this.value;pyUp()"></div><div class="r3">${[["Uang pas", o.total], ["50.000", 50000], ["100.000", 100000]].map(([l, v]) => `<button class="add" onclick="pyQ(${v})">${l}</button>`).join("")}</div><div class="tt"><span>Kembalian</span><span id="pyk">-</span></div>`;
+  const qris = `<p style="color:var(--mu);font-size:14px;margin:12px 0 0">Minta customer scan QRIS, lalu konfirmasi setelah pembayaran ${rp(o.total)} diterima.</p>`;
+  $("#dlg").innerHTML = `<div class="ov" onclick="if(event.target==this)closeD()"><div class="sheet" style="max-width:400px"><div style="background:var(--soft);border-radius:14px;padding:14px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace">${struk(o)}</div>${p ? `<div class="r2"><button class="bt" style="margin:12px 0 0;background:#25d366;color:#fff;box-shadow:none" onclick="sendWA('${id}')">Kirim WhatsApp</button><button class="bt" style="margin:12px 0 0" onclick="printStruk('${id}')">Cetak struk</button></div>` : `<div style="display:flex;gap:8px;margin-top:12px">${pm}</div>${PY.m == "Cash" ? cash : qris}<button class="bt" id="pyb" onclick="payNow('${id}')">Konfirmasi pembayaran ${PY.m}</button>`}<button class="bt2" onclick="closeD()">Tutup</button></div></div>`;
+  if (!p) pyUp();
+}
+async function payNow(id) {
+  const o = ORD.find(x => x.id == id); if (!o) return;
+  const m = PY.m, b = m == "Cash" ? +PY.b || 0 : o.total;
+  if (m == "Cash" && b < o.total) return toast("Uang diterima kurang dari total");
+  const k = m == "Cash" ? b - o.total : 0, bt = $("#pyb"); if (bt) { bt.disabled = true; bt.textContent = "Memproses…"; }
+  PAYD[id] = { m, b, k }; LS.set("pos_pay", PAYD);
+  try { await api("status", { key: MODE == "admin" ? AK : KEY, id, status: "Lunas", metode: m, bayar: b, kembali: k }); o.status = "Lunas"; o.metode = m; o.bayar = b; o.kembali = k; }
+  catch (e) { PAID.add(id); LS.set("pos_paid", [...PAID]); toast("Belum tersimpan ke Google Sheet: status Lunas hanya ada di perangkat ini"); }
   REDRAW(); openPay(id);
 }
 const cn = f => ORD.filter(o => mt(o, f)).length;
@@ -417,8 +440,7 @@ async function apoll() {
   } catch (e) {}
 }
 function alogout() { AK = ""; sessionStorage.removeItem("pos_akey"); clearInterval(APL); APL = null; alogin(); }
-// const AIC = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
-const AIC = { Dashboard: "", Menu: "", Order: "", Setting: "" };
+const AIC = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
 const HB = `<button class="ib hb" aria-label="Buka menu" aria-controls="drw" onclick="drw(1)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>`;
 const drw = o => { $("#drw").classList.toggle("open", !!o); document.body.style.overflow = o ? "hidden" : ""; };
 const goA = p => { PG = p; drw(0); drawA(); };
@@ -471,10 +493,17 @@ function drawMF(err) {
   <div class="fl"><label>Nama menu</label><input value="${esc(MF.name)}" oninput="MF.name=this.value"></div>
   <div class="fl"><label>Kategori</label><input list="cl" value="${esc(MF.cat)}" oninput="MF.cat=this.value"><datalist id="cl">${[...new Set(AM.map(p => p.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
   <div class="r2"><div class="fl"><label>Harga normal (Rp)</label><input type="number" inputmode="numeric" value="${MF.price}" oninput="MF.price=this.value"></div><div class="fl"><label>Diskon menu (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${MF.disc}" oninput="MF.disc=this.value"></div></div>
-  <div class="r2"><div class="fl"><label>Stok</label><div class="qt" style="justify-content:space-between;margin:4px 0 0;gap:8px"><button class="m" style="width:38px;height:38px;font-size:20px" aria-label="Kurangi stok" onclick="mfStep(-1)">−</button><input id="mfst" type="number" inputmode="numeric" min="0" value="${MF.stock}" aria-label="Jumlah stok" style="width:76px;text-align:center;font-size:20px;font-weight:700;padding:6px 2px;border:1px solid var(--ln);background:var(--cd);border-radius:10px" oninput="MF.stock=Math.max(0,parseInt(this.value)||0)"><button style="width:38px;height:38px;font-size:20px" aria-label="Tambah stok" onclick="mfStep(1)">+</button></div></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
+  <div class="r2"><div class="fl"><label>Stok</label><div class="qt" style="justify-content:space-between;margin:4px 0 0;gap:8px"><button class="m" style="width:38px;height:38px;font-size:20px" aria-label="Kurangi stok" onclick="mfStep(-1)">−</button><b id="mfst" style="font-size:20px" aria-live="polite">${MF.stock}</b><button style="width:38px;height:38px;font-size:20px" aria-label="Tambah stok" onclick="mfStep(1)">+</button></div></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
   ${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt" id="mfs" onclick="saveMF()">Simpan</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
 }
-const mfStep = d => { MF.stock = Math.max(0, (+MF.stock || 0) + d); $("#mfst").value = MF.stock; };
+function mfStep(d) {
+  const cur = +MF.stock || 0, w = d > 0 ? "Tambah" : "Kurangi";
+  $("#cfm").innerHTML = `<div class="ov" style="z-index:25;align-items:center" role="dialog" aria-modal="true"><div class="sheet" style="border-radius:24px;max-width:340px"><h2>${w} stok</h2><p style="color:var(--mu);margin:6px 0">Stok sekarang: <b style="color:var(--tx)">${cur}</b></p><div class="fl"><label>Jumlah yang ${d > 0 ? "ditambahkan" : "dikurangi"}</label><input id="stq" type="number" inputmode="numeric" min="1" placeholder="0" oninput="stPrev(${d})" onkeydown="if(event.key=='Enter')stOk(${d})"></div><div id="stp" style="color:var(--mu);font-size:14px;min-height:20px"></div><div class="r2"><button class="bt2" style="margin:10px 0 0" onclick="$('#cfm').innerHTML=''">Batal</button><button class="bt" style="margin:10px 0 0" onclick="stOk(${d})">${w}</button></div></div></div>`;
+  setTimeout(() => { const i = $("#stq"); if (i) i.focus(); }, 50);
+}
+const stNew = d => Math.max(0, (+MF.stock || 0) + d * Math.max(0, parseInt($("#stq").value) || 0));
+function stPrev(d) { $("#stp").textContent = "Stok menjadi: " + stNew(d); }
+function stOk(d) { if ((parseInt($("#stq").value) || 0) < 1) return $("#stp").textContent = "Isi jumlah minimal 1"; MF.stock = stNew(d); $("#mfst").textContent = MF.stock; $("#cfm").innerHTML = ""; }
 async function saveMF() {
   if (!MF.name.trim() || !(+MF.price > 0)) return drawMF("Isi nama dan harga normal");
   const b = $("#mfs"); b.disabled = true; b.textContent = "Menyimpan…";
