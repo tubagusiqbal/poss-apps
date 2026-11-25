@@ -113,8 +113,10 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const rp = n => "Rp" + Math.round(n || 0).toLocaleString("id-ID");
 const emo = c => ({ pempek: "🍢", bento: "🍱", minuman: "🥤" }[(c || "").toLowerCase()] || "🍽️");
-try { const u0 = new URLSearchParams(location.search).get("u"); if (u0) localStorage.setItem("pos_url", u0); } catch (e) {}
-let URLX = API_URL || localStorage.getItem("pos_url") || "";
+let U0 = "";
+try { U0 = new URLSearchParams(location.search).get("u") || ""; if (U0) localStorage.setItem("pos_url", U0); } catch (e) {}
+let URLX = U0 || API_URL || localStorage.getItem("pos_url") || "";
+const tail = () => URLX ? `<span style="font-size:11px;color:var(--mu);align-self:center">Sheet …${esc(URLX.slice(-8))}</span>` : "";
 const MODE = location.hash.startsWith("#admin") ? "admin" : location.hash.startsWith("#kasir") ? "kasir" : "customer", KASIR = MODE == "kasir";
 addEventListener("hashchange", () => location.reload());
 
@@ -244,7 +246,7 @@ function ordersView(top = "") {
   <div class="r2">${o.status == "Baru" ? stBtn(o.id, "Diproses", "Proses") + cancel(o.id) : o.status == "Diproses" ? stBtn(o.id, "Selesai", "Selesai", "var(--ok)") + cancel(o.id) : ""}</div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada pesanan</b>Pesanan baru muncul di sini dengan bunyi notifikasi.</div>`}</div></section>`;
 }
 function drawK() {
-  $("#app").innerHTML = head(pills("pill"), `<button class="ib" onclick="MUTE=!MUTE;if(!MUTE){AC&&AC.resume();beep()}drawK()">${MUTE ? "🔇 Mati" : "🔔 Suara"}</button>`) + ordersView();
+  $("#app").innerHTML = head(pills("pill"), tail() + `<button class="ib" onclick="MUTE=!MUTE;if(!MUTE){AC&&AC.resume();beep()}drawK()">${MUTE ? "🔇 Mati" : "🔔 Suara"}</button>`) + ordersView();
 }
 
 /* ================= ADMIN ================= */
@@ -302,7 +304,7 @@ function drawA() {
   if (!AK) PG = "Setting";
   const ic = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
   const nav = AK ? Object.keys(ic).map(p => `<button class="pill ${p == PG ? "on" : ""}" onclick="PG='${p}';drawA()">${ic[p]} ${p}</button>`).join("") : "";
-  const rt = AK ? `<button class="ib" aria-label="Suara" onclick="MUTE=!MUTE;drawA()">${MUTE ? "🔇" : "🔔"}</button><button class="ib" onclick="alogout()">Keluar</button>` : `<button class="ib" onclick="alogin()">Masuk</button>`;
+  const rt = AK ? tail() + `<button class="ib" aria-label="Suara" onclick="MUTE=!MUTE;drawA()">${MUTE ? "🔇" : "🔔"}</button><button class="ib" onclick="alogout()">Keluar</button>` : `<button class="ib" onclick="alogin()">Masuk</button>`;
   $("#app").innerHTML = head(nav, rt) + ({ Dashboard: pDash, Menu: pMenu, Order: () => ordersView(`<div class="chips">${pills("chip")}</div>`), Setting: pSet }[PG])();
 }
 function smooth(p) {
