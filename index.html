@@ -322,7 +322,7 @@ const mt = (o, f) => f == "Semua" ? true : f == "Aktif" ? (o.status == "Baru" ||
 const payBtn = o => { const s = stx(o); return s == "Belum Dibayar" ? `<button class="bt" style="margin:0;grid-column:1/-1" onclick="openPay('${o.id}')">💵 Bayar</button>` : s == "Lunas" ? `<button class="bt2" style="margin:0;grid-column:1/-1" onclick="openPay('${o.id}')">🧾 Lihat / cetak struk</button>` : ""; };
 function todayBox(L) {
   const td = dstr(Date.now()), pd = L.filter(o => isPaid(o) && dstr(o.ts) == td), un = L.filter(o => stx(o) == "Belum Dibayar");
-  return `${todayBox(AORD)}`;
+  return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(sm(pd.map(o => o.total)))}</div><small>${pd.length} pesanan lunas · ${un.length} belum dibayar${HID ? "" : " (" + rp(sm(un.map(o => o.total))) + ")"}</small></div><button class="ib" style="color:var(--tx)" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);REDRAW()">${HID ? "👁️ Tampilkan" : "🙈 Sembunyikan"}</button></section>`;
 }
 function struk(o) {
   const hr = `<hr style="border:0;border-top:1px dashed currentColor;margin:6px 0">`, p = isPaid(o);
@@ -452,7 +452,7 @@ function pDash() {
   const vals = days.map(d => (mp[d] || { r: 0, q: 0 })[CHM == "rev" ? "r" : "q"]);
   const pm = {}; R.forEach(o => o.items.forEach(i => pm[i.name] = (pm[i.name] || 0) + i.qty));
   const top = Object.entries(pm).sort((a, b) => b[1] - a[1]).slice(0, 5), tm = top.length ? top[0][1] : 1, pi = Object.fromEntries(AM.map(p => [p.name, p]));
-  return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(rev)}</div><small>${tdo.length} pesanan</small></div><button class="ib" style="color:var(--tx)" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);drawA()">${HID ? "👁️ Tampilkan" : "🙈 Sembunyikan"}</button></section>
+  return `${todayBox(AORD)}
   <div class="dg"><section class="pan"><div class="top"><h2>Grafik</h2><div class="nv" style="flex:none"><button class="pill ${CHM == "rev" ? "on" : ""}" onclick="CHM='rev';drawA()">Pendapatan</button><button class="pill ${CHM == "qty" ? "on" : ""}" onclick="CHM='qty';drawA()">Produk terjual</button></div></div>
   <div class="dr"><input type="date" value="${DR.from}" max="${DR.to}" aria-label="Dari tanggal" onchange="DR.from=this.value||DR.from;drawA()"><span>sampai</span><input type="date" value="${DR.to}" min="${DR.from}" aria-label="Sampai tanggal" onchange="DR.to=this.value||DR.to;drawA()"></div>
   <small style="color:var(--mu)">Periode ini: ${rp(sm(R.map(o => o.total)))} · ${sm(R.map(o => sm(o.items.map(i => i.qty))))} produk</small>${chart(days, vals, CHM == "rev")}</section>
