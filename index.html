@@ -100,13 +100,25 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 @media(min-width:1000px){.dg{grid-template-columns:2fr 1fr}}
 .dr{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;color:var(--mu);font-size:13px}.dr input{width:auto}
 .bar2{height:8px;background:var(--soft);border-radius:99px;margin-top:6px;overflow:hidden}.bar2 i{display:block;height:100%;background:var(--pr);border-radius:99px}
+@media(max-width:700px){
+#app{padding-left:8px;padding-right:8px}
+.lay>section,.lay>aside,.pan{padding:12px;border-radius:18px}
+.hd{padding:8px 10px;gap:8px}.lg{font-size:17px}
+.top{flex-wrap:wrap}.se{max-width:none;flex:1 1 100%}
+.grid:not(.k){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{padding:8px;border-radius:16px}
+.card>b{font-size:14px;line-height:1.25}
+.ft{padding:6px 8px}
+.ft b{font-size:18px}
+.r3 .add{font-size:12px;padding:8px 2px}
+}
 </style>
 </head>
 <body>
 <div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="toast"></div>
 <script>
 /* ===== PENGATURAN: tempel URL Web App Google Apps Script di sini ===== */
-const API_URL = "https://script.google.com/macros/s/AKfycby5WHEDtuYvDMOxOgsHL_fo9qU_ThGY9KlPQ0WqVD0M0fBQyB_tRThmhAbYgAUw2ryC/exec";
+const API_URL = "";
 /* Customer: buka index.html   |   Kasir: buka index.html#kasir */
 
 const $ = s => document.querySelector(s);
