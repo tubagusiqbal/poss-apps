@@ -254,7 +254,23 @@ let DR = { from: dstr(Date.now() - 6 * 864e5), to: dstr(Date.now()) };
 const closeD = () => $("#dlg").innerHTML = "";
 function readImg(f, max, cb, type) {
   if (!f) return; const r = new FileReader();
-  r.onload = () => { const im = new Image(); im.onload = () => { const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * k; c.height = im.height * k; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL(type || "image/jpeg", .82)); }; im.src = r.result; };
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      let m = max, q = .75, out = "";
+      for (let t = 0; t < 12; t++) {
+        const k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement("canvas");
+        c.width = Math.max(1, im.width * k); c.height = Math.max(1, im.height * k);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        out = c.toDataURL(type || "image/jpeg", q);
+        if (out.length <= 44000) break;
+        m *= .82; q = Math.max(.4, q - .05);
+      }
+      if (out.length > 44000) return toast("Gambar terlalu besar, pilih gambar lain");
+      cb(out);
+    };
+    im.src = r.result;
+  };
   r.readAsDataURL(f);
 }
 function admin() { if (!URLX) { PG = "Setting"; return drawA(); } if (!AK) return alogin(); aload(); }
@@ -322,7 +338,7 @@ function pMenu() {
 function openMF(id) { const p = AM.find(x => x.id == id); MF = p ? { id: p.id, name: p.name, cat: p.cat, price: p.orig, disc: p.d || 0, stock: p.stock, photo: p.photo, aktif: p.aktif } : { id: "", name: "", cat: "", price: "", disc: 0, stock: 0, photo: "", aktif: true }; drawMF(); }
 function drawMF(err) {
   $("#dlg").innerHTML = `<div class="ov"><div class="sheet"><h2>${MF.id ? "Edit" : "Tambah"} menu</h2><div class="ph" style="max-width:200px;margin:10px auto">${MF.photo ? `<img src="${esc(MF.photo)}" alt="">` : "📷"}</div>
-  <div class="fl"><label>Foto menu</label><input type="file" accept="image/*" onchange="readImg(this.files[0],700,d=>{MF.photo=d;drawMF()})"></div>
+  <div class="fl"><label>Foto menu</label><input type="file" accept="image/*" onchange="readImg(this.files[0],480,d=>{MF.photo=d;drawMF()})"></div>
   <div class="fl"><label>Nama menu</label><input value="${esc(MF.name)}" oninput="MF.name=this.value"></div>
   <div class="fl"><label>Kategori</label><input list="cl" value="${esc(MF.cat)}" oninput="MF.cat=this.value"><datalist id="cl">${[...new Set(AM.map(p => p.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
   <div class="r2"><div class="fl"><label>Harga normal (Rp)</label><input type="number" inputmode="numeric" value="${MF.price}" oninput="MF.price=this.value"></div><div class="fl"><label>Diskon menu (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${MF.disc}" oninput="MF.disc=this.value"></div></div>
@@ -333,7 +349,6 @@ async function saveMF() {
   if (!MF.name.trim() || !(+MF.price > 0)) return drawMF("Isi nama dan harga normal");
   const b = $("#mfs"); b.disabled = true; b.textContent = "Menyimpan…";
   try {
-    if (MF.photo.startsWith("data:")) MF.photo = (await api("upload", { key: AK, data: MF.photo })).url;
     await api("menusave", { key: AK, m: MF }); closeD(); aload();
   } catch (e) { drawMF(e.message); }
 }
@@ -349,7 +364,7 @@ function pSet() {
   if (!AK) return conn;
   SF = SF || { ...SET };
   return `<section class="pan"><h2>Pengaturan Toko</h2><div class="fl" style="margin-top:12px"><label>Nama toko</label><input value="${esc(SF.nama)}" oninput="SF.nama=this.value"></div>
-  <div class="fl"><label>Logo toko</label><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="mk" style="width:48px;height:48px;overflow:hidden;flex:none">${SF.logo ? `<img src="${esc(SF.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span><input type="file" accept="image/*" onchange="readImg(this.files[0],256,d=>{SF.logo=d;drawA()},'image/png')">${SF.logo ? `<button class="ib" onclick="SF.logo='';drawA()">Hapus</button>` : ""}</div></div>
+  <div class="fl"><label>Logo toko</label><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="mk" style="width:48px;height:48px;overflow:hidden;flex:none">${SF.logo ? `<img src="${esc(SF.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span><input type="file" accept="image/*" onchange="readImg(this.files[0],160,d=>{SF.logo=d;drawA()},'image/png')">${SF.logo ? `<button class="ib" onclick="SF.logo='';drawA()">Hapus</button>` : ""}</div></div>
   <h3 style="margin:16px 0 6px">Diskon</h3><label class="fl" style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${SF.dAktif ? "checked" : ""} onchange="SF.dAktif=this.checked">Aktifkan diskon untuk semua menu</label>
   <div class="fl"><label>Besar diskon (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${SF.dPersen}" oninput="SF.dPersen=+this.value"></div><small style="color:var(--mu)">Menu yang punya diskon sendiri memakai diskonnya sendiri.</small>
   <button class="bt" id="ss" onclick="saveSet()">Simpan pengaturan</button></section>` + conn;
@@ -357,7 +372,6 @@ function pSet() {
 async function saveSet() {
   const b = $("#ss"); b.disabled = true; b.textContent = "Menyimpan…";
   try {
-    if (SF.logo.startsWith("data:")) SF.logo = (await api("upload", { key: AK, data: SF.logo })).url;
     await api("setsave", { key: AK, s: SF }); toast("Pengaturan disimpan"); aload();
   } catch (e) { toast(e.message); drawA(); }
 }
