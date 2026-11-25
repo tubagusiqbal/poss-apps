@@ -85,6 +85,21 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#14201a;color:#fff;padding:10px 16px;border-radius:12px;z-index:40;font-size:13px;display:none;max-width:90%}
 .err{color:var(--bad);font-size:13px;margin-top:8px}
 .card1{background:#fff;border-radius:22px;padding:20px;max-width:400px;margin:40px auto}
+
+.ft{flex-wrap:wrap;justify-content:space-between;gap:6px}
+.ft b{font-size:clamp(13px,1.15vw,16px);letter-spacing:-.3px}
+.ft>div:first-child{min-width:0}
+.add{flex:none;width:38px;height:36px;padding:0;margin-left:auto;font-size:16px}
+.qt{margin-left:auto;gap:6px}.qt button{width:28px;height:28px}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.r3 .add{width:auto;margin:0;font-size:13px;height:auto;padding:8px 4px}
+.pan{background:#fff;border-radius:22px;padding:18px}
+.big{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;background:linear-gradient(135deg,#2f5d34,#1f3d24);color:#fff}
+.big small{opacity:.8}.amt{font-size:clamp(24px,5vw,36px);font-weight:800;letter-spacing:-1px;margin:2px 0}
+.dg{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:1000px){.dg{grid-template-columns:2fr 1fr}}
+.dr{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;color:var(--mu);font-size:13px}.dr input{width:auto}
+.bar2{height:8px;background:var(--soft);border-radius:99px;margin-top:6px;overflow:hidden}.bar2 i{display:block;height:100%;background:var(--pr);border-radius:99px}
 </style>
 </head>
 <body>
@@ -98,8 +113,9 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const rp = n => "Rp" + Math.round(n || 0).toLocaleString("id-ID");
 const emo = c => ({ pempek: "🍢", bento: "🍱", minuman: "🥤" }[(c || "").toLowerCase()] || "🍽️");
+try { const u0 = new URLSearchParams(location.search).get("u"); if (u0) localStorage.setItem("pos_url", u0); } catch (e) {}
 let URLX = API_URL || localStorage.getItem("pos_url") || "";
-let KASIR = location.hash.startsWith("#kasir");
+const MODE = location.hash.startsWith("#admin") ? "admin" : location.hash.startsWith("#kasir") ? "kasir" : "customer", KASIR = MODE == "kasir";
 addEventListener("hashchange", () => location.reload());
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2600); }
@@ -109,15 +125,12 @@ async function api(act, body = {}) {
   if (j.error) throw new Error(j.error);
   return j;
 }
-const STORE = "Warung Saya"; // nama usaha
-const head = (nav, rt = "") => `<header class="hd"><div class="lg"><span class="mk">🍜</span>${esc(STORE)}</div><div class="nv">${nav}</div><div class="rt">${rt}</div></header>`;
-function setup() {
-  $("#app").innerHTML = head("") + `<div class="card1"><h2>Hubungkan Google Sheet</h2><label style="font-size:12px;color:var(--mu)">URL Web App (Apps Script)</label><div class="fl"><input id="u" placeholder="https://script.google.com/macros/s/.../exec"></div><button class="bt" onclick="saveUrl()">Simpan</button></div>`;
-}
-function saveUrl() {
-  const u = $("#u").value.trim();
-  if (!/^https:\/\/script\.google\.com\//.test(u)) return toast("URL Web App tidak valid");
-  localStorage.setItem("pos_url", u); location.reload();
+let SET = { nama: "Warung Saya", logo: "", dAktif: false, dPersen: 0 };
+try { SET = JSON.parse(localStorage.getItem("pos_set")) || SET; } catch (e) {}
+const setSet = x => { if (x) { SET = x; try { localStorage.setItem("pos_set", JSON.stringify(x)); } catch (e) {} } };
+const head = (nav, rt = "") => `<header class="hd"><div class="lg"><span class="mk" style="overflow:hidden">${SET.logo ? `<img src="${esc(SET.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span>${esc(SET.nama)}</div><div class="nv">${nav}</div><div class="rt">${rt}</div></header>`;
+function notConn() {
+  $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Aplikasi belum terhubung</b>Admin: buka alamat ini dengan #admin, lalu isi pengaturan Sinkron Google Sheet.</div></div>`;
 }
 
 /* ================= CUSTOMER ================= */
@@ -129,7 +142,7 @@ const pic = p => p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` :
 
 async function cust() {
   $("#app").innerHTML = head("") + `<div class="empty" style="color:#fff">Memuat menu…</div>`;
-  try { MENU = (await api("menu")).menu; } catch (e) { $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`; return; }
+  try { const r = await api("menu"); MENU = r.menu; setSet(r.set); } catch (e) { $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`; return; }
   $("#app").innerHTML = head("", `<span style="color:var(--mu);font-size:13px;align-self:center">Pesan mandiri</span>`) + `<div class="lay"><section><div class="top"><h2>Menu</h2><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
   drawChips(); drawGrid(); drawPanel();
 }
@@ -141,7 +154,7 @@ function drawGrid() {
   const q = Q.trim().toLowerCase(), list = MENU.filter(p => (CAT == "Semua" || p.cat == CAT) && (!q || p.name.toLowerCase().includes(q)));
   $("#gr").innerHTML = list.map(p => {
     const c = CART[p.id] || 0, out = p.stock < 1, bd = out ? ["x", "Habis"] : p.stock <= 5 ? ["w", "Sisa " + p.stock] : ["", "Tersedia"];
-    return `<div class="card ${out ? "out" : ""}"><div class="ph">${pic(p)}<span class="bd ${bd[0]}">${bd[1]}</span></div><b>${esc(p.name)}</b><div class="ft"><div><small>Harga</small><b>${rp(p.price)}</b></div>${c ? `<div class="qt"><button class="m" aria-label="Kurangi" onclick="chg('${p.id}',-1)">−</button><span>${c}</span><button aria-label="Tambah" onclick="chg('${p.id}',1)">+</button></div>` : `<button class="add" ${out ? "disabled" : ""} onclick="chg('${p.id}',1)">🛒 Tambah</button>`}</div></div>`;
+    return `<div class="card ${out ? "out" : ""}"><div class="ph">${pic(p)}<span class="bd ${bd[0]}">${bd[1]}</span></div><b>${esc(p.name)}</b><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div>${c ? `<div class="qt"><button class="m" aria-label="Kurangi" onclick="chg('${p.id}',-1)">−</button><span>${c}</span><button aria-label="Tambah" onclick="chg('${p.id}',1)">+</button></div>` : `<button class="add" aria-label="Tambah ke pesanan" ${out ? "disabled" : ""} onclick="chg('${p.id}',1)">🛒</button>`}</div></div>`;
   }).join("") || `<div class="empty" style="grid-column:1/-1">Menu tidak ditemukan</div>`;
 }
 function panelHTML(err) {
@@ -212,27 +225,155 @@ function alarm(f) {
 }
 const hhmm = t => new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 async function setSt(id, s) {
-  try { await api("status", { key: KEY, id, status: s }); ORD.find(o => o.id == id).status = s; drawK(); } catch (e) { toast(e.message); }
+  try { await api("status", { key: MODE == "admin" ? AK : KEY, id, status: s }); ORD.find(o => o.id == id).status = s; REDRAW(); } catch (e) { toast(e.message); }
 }
-function drawK() {
+const cn = f => f == "Aktif" ? ORD.filter(o => o.status == "Baru" || o.status == "Diproses").length : f == "Semua" ? ORD.length : ORD.filter(o => o.status == f).length;
+const pills = c => ["Aktif", "Baru", "Diproses", "Selesai", "Batal", "Semua"].map(f => `<button class="${c} ${f == FIL ? "on" : ""}" onclick="FIL='${f}';REDRAW()">${f} (${cn(f)})</button>`).join("");
+const REDRAW = () => MODE == "admin" ? drawA() : drawK();
+function ordersView(top = "") {
   const act = o => o.status == "Baru" || o.status == "Diproses";
   const L = ORD.filter(o => FIL == "Aktif" ? act(o) : FIL == "Semua" ? true : o.status == FIL).slice().reverse();
-  const n = s => ORD.filter(o => o.status == s).length;
-  const cn = f => f == "Aktif" ? n("Baru") + n("Diproses") : f == "Semua" ? ORD.length : n(f);
-  const nav = ["Aktif", "Baru", "Diproses", "Selesai", "Batal", "Semua"].map(f => `<button class="pill ${f == FIL ? "on" : ""}" onclick="FIL='${f}';drawK()">${f} (${cn(f)})</button>`).join("");
   const stBtn = (id, to, label, bg) => `<button class="bt" style="margin:0;${bg ? "background:" + bg : ""}" onclick="setSt('${id}','${to}')">${label}</button>`;
   const cancel = id => `<button class="bt2" style="margin:0" onclick="if(confirm('Batalkan pesanan ini?'))setSt('${id}','Batal')">Batalkan</button>`;
-  $("#app").innerHTML = head(nav, `<button class="ib" onclick="MUTE=!MUTE;if(!MUTE){AC&&AC.resume();beep()}drawK()">${MUTE ? "🔇 Mati" : "🔔 Suara"}</button>`) +
-  `<section style="background:#fff;border-radius:22px;padding:18px"><div class="top"><h2>Pesanan Masuk</h2><small style="color:var(--mu)">diperbarui otomatis</small></div><div class="grid k">${L.map(o => `<div class="card ${o.status == "Baru" ? "new" : ""}" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="meja">Bangku ${esc(o.meja)}</span><span class="tag ${o.status}">${o.status}</span></div>
+  return `<section class="pan"><div class="top"><h2>Pesanan Masuk</h2><small style="color:var(--mu)">diperbarui otomatis</small></div>${top}<div class="grid k">${L.map(o => `<div class="card ${o.status == "Baru" ? "new" : ""}" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="meja">Bangku ${esc(o.meja)}</span><span class="tag ${o.status}">${o.status}</span></div>
   <small style="color:var(--mu)">${esc(o.id)} · ${hhmm(o.ts)} · ${esc(o.nama)} · <a href="tel:${esc(o.telp)}" style="color:var(--pr)">${esc(o.telp)}</a></small>
   <div>${o.items.map(i => `<div class="li"><b style="font-weight:600">${i.qty}× ${esc(i.name)}</b><span>${rp(i.qty * i.price)}</span></div>`).join("")}</div>
   ${o.note ? `<small>📝 ${esc(o.note)}</small>` : ""}<div class="tt" style="margin:0"><span>Total</span><span>${rp(o.total)}</span></div>
   <div class="r2">${o.status == "Baru" ? stBtn(o.id, "Diproses", "Proses") + cancel(o.id) : o.status == "Diproses" ? stBtn(o.id, "Selesai", "Selesai", "var(--ok)") + cancel(o.id) : ""}</div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada pesanan</b>Pesanan baru muncul di sini dengan bunyi notifikasi.</div>`}</div></section>`;
 }
+function drawK() {
+  $("#app").innerHTML = head(pills("pill"), `<button class="ib" onclick="MUTE=!MUTE;if(!MUTE){AC&&AC.resume();beep()}drawK()">${MUTE ? "🔇 Mati" : "🔔 Suara"}</button>`) + ordersView();
+}
 
-addEventListener("pointerdown", () => { if (KASIR && !AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC) AC.resume(); });
+/* ================= ADMIN ================= */
+const dstr = d => { d = new Date(d); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const sm = a => a.reduce((s, x) => s + x, 0);
+const fmt = n => n >= 1e6 ? +(n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n));
+let AK = sessionStorage.getItem("pos_akey") || "", AM = [], AORD = [], PG = "Dashboard", CHM = "rev", HID = localStorage.getItem("pos_hide") == "1", APL = null, MF = null, ST = null, SF = null;
+let DR = { from: dstr(Date.now() - 6 * 864e5), to: dstr(Date.now()) };
+const closeD = () => $("#dlg").innerHTML = "";
+function readImg(f, max, cb, type) {
+  if (!f) return; const r = new FileReader();
+  r.onload = () => { const im = new Image(); im.onload = () => { const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * k; c.height = im.height * k; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL(type || "image/jpeg", .82)); }; im.src = r.result; };
+  r.readAsDataURL(f);
+}
+function admin() { if (!URLX) { PG = "Setting"; return drawA(); } if (!AK) return alogin(); aload(); }
+function alogin(err) {
+  $("#app").innerHTML = head("") + `<div class="card1"><h2>Masuk Admin</h2><div class="fl" style="margin-top:12px"><label>Kode admin</label><input id="k" type="password" onkeydown="if(event.key=='Enter')adoLogin()"></div>${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt" onclick="adoLogin()">Masuk</button><button class="bt2" onclick="PG='Setting';drawA()">Atur koneksi Google Sheet</button></div>`;
+}
+const adoLogin = () => { AK = $("#k").value.trim(); aload(); };
+async function aload() {
+  try {
+    const [m, o] = await Promise.all([api("adminmenu", { key: AK }), api("orders", { key: AK, all: true })]);
+    AM = m.menu; setSet(m.set); SF = { ...SET }; ORD = AORD = o.orders; SEEN = new Set(ORD.map(x => x.id));
+    sessionStorage.setItem("pos_akey", AK); if (!APL) APL = setInterval(apoll, 8000);
+    drawA();
+  } catch (e) { AK = ""; sessionStorage.removeItem("pos_akey"); alogin(e.message); }
+}
+async function apoll() {
+  if (!AK) return;
+  try {
+    const o = await api("orders", { key: AK, all: true }), fresh = o.orders.filter(x => x.status == "Baru" && SEEN && !SEEN.has(x.id));
+    SEEN = new Set(o.orders.map(x => x.id)); ORD = AORD = o.orders;
+    if (fresh.length) alarm(fresh);
+    if (!$("#dlg").innerHTML && (PG == "Dashboard" || PG == "Order")) drawA();
+  } catch (e) {}
+}
+function alogout() { AK = ""; sessionStorage.removeItem("pos_akey"); clearInterval(APL); APL = null; alogin(); }
+function drawA() {
+  if (!AK) PG = "Setting";
+  const ic = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
+  const nav = AK ? Object.keys(ic).map(p => `<button class="pill ${p == PG ? "on" : ""}" onclick="PG='${p}';drawA()">${ic[p]} ${p}</button>`).join("") : "";
+  const rt = AK ? `<button class="ib" aria-label="Suara" onclick="MUTE=!MUTE;drawA()">${MUTE ? "🔇" : "🔔"}</button><button class="ib" onclick="alogout()">Keluar</button>` : `<button class="ib" onclick="alogin()">Masuk</button>`;
+  $("#app").innerHTML = head(nav, rt) + ({ Dashboard: pDash, Menu: pMenu, Order: () => ordersView(`<div class="chips">${pills("chip")}</div>`), Setting: pSet }[PG])();
+}
+function smooth(p) {
+  let d = `M${p[0][0]},${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) { const a = p[i - 1] || p[i], b = p[i], c = p[i + 1], e = p[i + 2] || c; d += ` C${b[0] + (c[0] - a[0]) / 6},${b[1] + (c[1] - a[1]) / 6} ${c[0] - (e[0] - b[0]) / 6},${c[1] - (e[1] - b[1]) / 6} ${c[0]},${c[1]}`; }
+  return d;
+}
+function chart(days, vals, rpm) {
+  const W = 640, H = 240, L = 44, B = 28, T = 12, R = 12, mx = Math.max(...vals, 1), n = days.length;
+  const X = i => L + (n < 2 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)), Y = v => T + (H - T - B) * (1 - v / mx), P = vals.map((v, i) => [X(i), Y(v)]);
+  const grid = [0, .25, .5, .75, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${Y(mx * f)}" y2="${Y(mx * f)}" stroke="#e6e9e3"/><text x="${L - 6}" y="${Y(mx * f) + 4}" text-anchor="end" font-size="11" fill="#6b7770">${fmt(mx * f)}</text>`).join("");
+  const st = Math.ceil(n / 6), xl = days.map((d, i) => i % st == 0 ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#6b7770">${d.slice(8)}/${d.slice(5, 7)}</text>` : "").join("");
+  const ln = n > 1 ? smooth(P) : "";
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Grafik">${grid}${xl}${n > 1 ? `<path d="${ln} L${P[n - 1][0]},${Y(0)} L${P[0][0]},${Y(0)}Z" fill="rgba(47,93,52,.12)"/><path d="${ln}" fill="none" stroke="#2f5d34" stroke-width="3" stroke-linecap="round"/>` : ""}${n <= 45 ? P.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#2f5d34" stroke-width="2"><title>${days[i]}: ${rpm ? rp(vals[i]) : vals[i] + " produk"}</title></circle>`).join("") : ""}</svg>`;
+}
+function pDash() {
+  const ok = AORD.filter(o => o.status != "Batal"), td = dstr(Date.now()), tdo = ok.filter(o => dstr(o.ts) == td), rev = sm(tdo.map(o => o.total));
+  const R = ok.filter(o => { const d = dstr(o.ts); return d >= DR.from && d <= DR.to; });
+  const days = []; for (let d = new Date(DR.from + "T00:00"); dstr(d) <= DR.to && days.length < 366; d.setDate(d.getDate() + 1)) days.push(dstr(d));
+  const mp = {}; R.forEach(o => { const k = dstr(o.ts), m = mp[k] = mp[k] || { r: 0, q: 0 }; m.r += o.total; m.q += sm(o.items.map(i => i.qty)); });
+  const vals = days.map(d => (mp[d] || { r: 0, q: 0 })[CHM == "rev" ? "r" : "q"]);
+  const pm = {}; R.forEach(o => o.items.forEach(i => pm[i.name] = (pm[i.name] || 0) + i.qty));
+  const top = Object.entries(pm).sort((a, b) => b[1] - a[1]).slice(0, 5), tm = top.length ? top[0][1] : 1, pi = Object.fromEntries(AM.map(p => [p.name, p]));
+  return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(rev)}</div><small>${tdo.length} pesanan</small></div><button class="ib" style="color:var(--tx)" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);drawA()">${HID ? "👁️ Tampilkan" : "🙈 Sembunyikan"}</button></section>
+  <div class="dg"><section class="pan"><div class="top"><h2>Grafik</h2><div class="nv" style="flex:none"><button class="pill ${CHM == "rev" ? "on" : ""}" onclick="CHM='rev';drawA()">Pendapatan</button><button class="pill ${CHM == "qty" ? "on" : ""}" onclick="CHM='qty';drawA()">Produk terjual</button></div></div>
+  <div class="dr"><input type="date" value="${DR.from}" max="${DR.to}" aria-label="Dari tanggal" onchange="DR.from=this.value||DR.from;drawA()"><span>sampai</span><input type="date" value="${DR.to}" min="${DR.from}" aria-label="Sampai tanggal" onchange="DR.to=this.value||DR.to;drawA()"></div>
+  <small style="color:var(--mu)">Periode ini: ${rp(sm(R.map(o => o.total)))} · ${sm(R.map(o => sm(o.items.map(i => i.qty))))} produk</small>${chart(days, vals, CHM == "rev")}</section>
+  <section class="pan"><h2 style="margin-bottom:10px">Produk Populer</h2>${top.map(([n, q]) => `<div class="it"><div class="th">${pi[n] ? (pi[n].photo ? `<img src="${esc(pi[n].photo)}" alt="">` : emo(pi[n].cat)) : "🍽️"}</div><div class="sp"><b>${esc(n)}</b><div class="bar2"><i style="width:${q / tm * 100}%"></i></div></div><b>${q}×</b></div>`).join("") || `<div class="empty">Belum ada data</div>`}</section></div>
+  <section class="pan" style="margin-top:12px"><div class="top"><h2>Riwayat Order</h2><button class="ib" onclick="PG='Order';drawA()">Lihat semua</button></div>${AORD.slice(-15).reverse().map(o => `<div class="li"><span><b>${esc(o.id)}</b> · ${esc(o.nama)} · Bangku ${esc(o.meja)}<br><small style="color:var(--mu)">${fdt(o.ts)} · ${esc(o.items.map(i => i.qty + "× " + i.name).join(", "))}</small></span><span style="text-align:right"><b>${rp(o.total)}</b><br><span class="tag ${o.status}">${o.status}</span></span></div>`).join("") || `<div class="empty">Belum ada pesanan</div>`}</section>`;
+}
+const fdt = t => new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+function pMenu() {
+  return `<section class="pan"><div class="top"><h2>Menu (${AM.length})</h2><button class="bt" style="width:auto;margin:0;padding:10px 16px" onclick="openMF()">＋ Tambah menu</button></div><div class="grid">${AM.map(p => `<div class="card ${p.aktif ? "" : "out"}"><div class="ph">${pic(p)}<span class="bd ${!p.aktif || p.stock < 1 ? "x" : p.stock <= 5 ? "w" : ""}">${p.aktif ? "Stok " + p.stock : "Nonaktif"}</span></div><b>${esc(p.name)}</b><small style="color:var(--mu);padding:0 4px">${esc(p.cat)}</small><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div></div><div class="r3"><button class="add" onclick="stockDlg('${p.id}')">Stok</button><button class="add" onclick="openMF('${p.id}')">Edit</button><button class="add" style="color:var(--bad)" onclick="delMenu('${p.id}')">Hapus</button></div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada menu</b>Tambahkan menu pertama Anda.</div>`}</div></section>`;
+}
+function openMF(id) { const p = AM.find(x => x.id == id); MF = p ? { id: p.id, name: p.name, cat: p.cat, price: p.orig, disc: p.d || 0, stock: p.stock, photo: p.photo, aktif: p.aktif } : { id: "", name: "", cat: "", price: "", disc: 0, stock: 0, photo: "", aktif: true }; drawMF(); }
+function drawMF(err) {
+  $("#dlg").innerHTML = `<div class="ov"><div class="sheet"><h2>${MF.id ? "Edit" : "Tambah"} menu</h2><div class="ph" style="max-width:200px;margin:10px auto">${MF.photo ? `<img src="${esc(MF.photo)}" alt="">` : "📷"}</div>
+  <div class="fl"><label>Foto menu</label><input type="file" accept="image/*" onchange="readImg(this.files[0],700,d=>{MF.photo=d;drawMF()})"></div>
+  <div class="fl"><label>Nama menu</label><input value="${esc(MF.name)}" oninput="MF.name=this.value"></div>
+  <div class="fl"><label>Kategori</label><input list="cl" value="${esc(MF.cat)}" oninput="MF.cat=this.value"><datalist id="cl">${[...new Set(AM.map(p => p.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
+  <div class="r2"><div class="fl"><label>Harga normal (Rp)</label><input type="number" inputmode="numeric" value="${MF.price}" oninput="MF.price=this.value"></div><div class="fl"><label>Diskon menu (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${MF.disc}" oninput="MF.disc=this.value"></div></div>
+  <div class="r2"><div class="fl"><label>Stok</label><input type="number" inputmode="numeric" value="${MF.stock}" oninput="MF.stock=this.value"></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
+  ${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt" id="mfs" onclick="saveMF()">Simpan</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
+}
+async function saveMF() {
+  if (!MF.name.trim() || !(+MF.price > 0)) return drawMF("Isi nama dan harga normal");
+  const b = $("#mfs"); b.disabled = true; b.textContent = "Menyimpan…";
+  try {
+    if (MF.photo.startsWith("data:")) MF.photo = (await api("upload", { key: AK, data: MF.photo })).url;
+    await api("menusave", { key: AK, m: MF }); closeD(); aload();
+  } catch (e) { drawMF(e.message); }
+}
+async function delMenu(id) { if (!confirm("Hapus menu ini?")) return; try { await api("menudel", { key: AK, id }); aload(); } catch (e) { toast(e.message); } }
+function stockDlg(id) { const p = AM.find(x => x.id == id); ST = { id, name: p.name, v: p.stock }; drawST(); }
+function drawST() {
+  $("#dlg").innerHTML = `<div class="ov" onclick="if(event.target==this)closeD()"><div class="sheet" style="max-width:380px"><h2>Atur stok</h2><p style="margin:4px 0 14px;color:var(--mu)">${esc(ST.name)}</p><div class="qt" style="justify-content:center;gap:12px"><button class="m" style="width:44px;height:44px" aria-label="Kurangi" onclick="stStep(-1)">−</button><input id="sv" type="number" inputmode="numeric" value="${ST.v}" style="width:100px;text-align:center;font-size:20px;font-weight:700" oninput="ST.v=+this.value||0"><button style="width:44px;height:44px" aria-label="Tambah" onclick="stStep(1)">+</button></div><div class="chips" style="justify-content:center;margin-top:12px">${[5, 10, 20].map(n => `<button class="chip" onclick="stStep(${n})">+${n}</button>`).join("")}</div><button class="bt" onclick="saveST()">Simpan stok</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
+}
+const stStep = d => { ST.v = Math.max(0, (+ST.v || 0) + d); $("#sv").value = ST.v; };
+async function saveST() { try { await api("stock", { key: AK, id: ST.id, stock: ST.v }); AM.find(x => x.id == ST.id).stock = ST.v; closeD(); drawA(); toast("Stok diperbarui"); } catch (e) { toast(e.message); } }
+function pSet() {
+  const conn = `<section class="pan" style="margin-top:${AK ? 12 : 0}px"><h2>Sinkron Google Sheet</h2><p style="color:var(--mu);font-size:13px;margin:4px 0">Status: ${URLX ? (AK ? "Terhubung ✓" : "Belum masuk") : "Belum terhubung"}</p><div class="fl"><label>URL Web App (Apps Script)</label><input id="cu" value="${esc(URLX)}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="fl"><label>Kode admin</label><input id="ck" type="password" value="${esc(AK)}"></div><div class="r2"><button class="bt" style="margin:0" onclick="aconnect()">Hubungkan</button><button class="bt2" style="margin:0" onclick="adisc()">Putuskan</button></div>${URLX ? `<div class="r2" style="margin-top:8px"><button class="bt2" style="margin:0" onclick="copyL('')">Salin tautan customer</button><button class="bt2" style="margin:0" onclick="copyL('#kasir')">Salin tautan kasir</button></div>` : ""}</section>`;
+  if (!AK) return conn;
+  SF = SF || { ...SET };
+  return `<section class="pan"><h2>Pengaturan Toko</h2><div class="fl" style="margin-top:12px"><label>Nama toko</label><input value="${esc(SF.nama)}" oninput="SF.nama=this.value"></div>
+  <div class="fl"><label>Logo toko</label><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="mk" style="width:48px;height:48px;overflow:hidden;flex:none">${SF.logo ? `<img src="${esc(SF.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span><input type="file" accept="image/*" onchange="readImg(this.files[0],256,d=>{SF.logo=d;drawA()},'image/png')">${SF.logo ? `<button class="ib" onclick="SF.logo='';drawA()">Hapus</button>` : ""}</div></div>
+  <h3 style="margin:16px 0 6px">Diskon</h3><label class="fl" style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${SF.dAktif ? "checked" : ""} onchange="SF.dAktif=this.checked">Aktifkan diskon untuk semua menu</label>
+  <div class="fl"><label>Besar diskon (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${SF.dPersen}" oninput="SF.dPersen=+this.value"></div><small style="color:var(--mu)">Menu yang punya diskon sendiri memakai diskonnya sendiri.</small>
+  <button class="bt" id="ss" onclick="saveSet()">Simpan pengaturan</button></section>` + conn;
+}
+async function saveSet() {
+  const b = $("#ss"); b.disabled = true; b.textContent = "Menyimpan…";
+  try {
+    if (SF.logo.startsWith("data:")) SF.logo = (await api("upload", { key: AK, data: SF.logo })).url;
+    await api("setsave", { key: AK, s: SF }); toast("Pengaturan disimpan"); aload();
+  } catch (e) { toast(e.message); drawA(); }
+}
+function aconnect() {
+  const u = $("#cu").value.trim(), k = $("#ck").value.trim();
+  if (!/^https:\/\/script\.google\.com\//.test(u)) return toast("URL Web App tidak valid");
+  if (!k) return toast("Isi kode admin");
+  URLX = u; localStorage.setItem("pos_url", u); AK = k; aload();
+}
+function adisc() { localStorage.removeItem("pos_url"); URLX = ""; alogout(); PG = "Setting"; drawA(); }
+const copyL = h => navigator.clipboard.writeText(location.origin + location.pathname + "?u=" + encodeURIComponent(URLX) + h).then(() => toast("Tautan disalin"), () => toast("Gagal menyalin"));
+
+addEventListener("pointerdown", () => { if (MODE != "customer" && !AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC) AC.resume(); });
 /* ================= START ================= */
-if (!URLX) setup();
+if (MODE == "admin") admin();
+else if (!URLX) notConn();
 else if (KASIR) { if (KEY) { AC = null; poll(true); } else login(); }
 else cust();
 </script>
