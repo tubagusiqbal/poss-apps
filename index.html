@@ -120,8 +120,10 @@ addEventListener("hashchange", () => location.reload());
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2600); }
 async function api(act, body = {}) {
-  const r = await fetch(URLX, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ act, ...body }) });
-  const j = await r.json();
+  let r, j;
+  try { r = await fetch(URLX, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ act, ...body }) }); }
+  catch (e) { throw new Error("Tidak bisa terhubung ke Google. Cek URL Web App (berakhiran ..." + URLX.slice(-12) + "), akses harus Anyone, dan izin script sudah diberikan."); }
+  try { j = await r.json(); } catch (e) { throw new Error("Balasan Google bukan data yang valid. Deploy ulang sebagai New version dengan akses Anyone."); }
   if (j.error) throw new Error(j.error);
   return j;
 }
