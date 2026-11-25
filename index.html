@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
 <title>Pesan Makanan</title>
 <style>
 :root{--bg:#fff;--cd:#fff;--tx:#14201a;--pr:#2f5d34;--pt:#fff;--soft:color-mix(in srgb,var(--tx) 5%,var(--cd));--mu:color-mix(in srgb,var(--tx) 55%,var(--cd));--ln:color-mix(in srgb,var(--tx) 12%,var(--cd));--pr2:color-mix(in srgb,var(--pr) 78%,#000);--sh:0 4px 18px rgba(0,0,0,.22);--ok:#22a53a;--wn:#f59e0b;--bad:#dc2626;box-sizing:border-box}
@@ -118,10 +119,26 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .bar{box-shadow:0 -3px 14px rgba(0,0,0,.14)}
 .amt{color:var(--pr)}
 .sk{height:14px;border-radius:6px;background:var(--soft)}
+.hb{display:none;width:44px;padding:0;place-items:center}
+.lg{min-width:0;white-space:nowrap}.lg .mk{flex:none}
+@media(max-width:900px){.hd .nv.adm,.hm{display:none!important}.hb{display:grid}.hd:has(.hb){flex-wrap:nowrap}.hd:has(.hb) .rt{margin-left:auto}}
+.drw{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s linear .3s}
+.drw.open{visibility:visible;transition-delay:0s}
+.dbg{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .3s}
+.drw.open .dbg{opacity:1}
+.dp{position:absolute;top:0;right:0;bottom:0;width:min(300px,85vw);background:var(--cd);box-shadow:-6px 0 24px rgba(0,0,0,.25);transform:translateX(100%);transition:transform .3s ease;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));overflow:auto}
+.drw.open .dp{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;font-size:18px}
+.di{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:12px;font-weight:600;text-align:left;margin-bottom:6px}
+.di.on{background:var(--pr);color:var(--pt)}
+.dp hr{border:0;border-top:1px solid var(--ln);margin:10px 0}
+.card .r2 .add{width:auto;margin:0;font-size:13px;height:auto;padding:9px 4px}
+@media(prefers-reduced-motion:reduce){.dp,.dbg{transition:none}}
 </style>
 </head>
 <body>
-<div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="toast"></div>
+<div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="cfm"></div><div id="toast"></div>
+<div id="drw" class="drw"><div class="dbg" onclick="drw(0)"></div><aside class="dp" role="dialog" aria-label="Menu admin"><div id="dpc"></div></aside></div>
 <script>
 /* ===== PENGATURAN: tempel URL Web App Google Apps Script di sini ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbwigrTz-reLiaCvcNillZ4OH4Pu-BBSUQ2ruRBS7NQ_MeKJclNl9b3xaT_9Do31NJIb/exec";
@@ -158,7 +175,7 @@ function applyTheme(t) {
 }
 applyTheme(SET.tema);
 const setSet = x => { if (x) { SET = x; applyTheme(x.tema); try { localStorage.setItem("pos_set", JSON.stringify(x)); } catch (e) {} } };
-const head = (nav, rt = "") => `<header class="hd"><div class="lg"><span class="mk" style="overflow:hidden">${SET.logo ? `<img src="${esc(SET.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span>${esc(SET.nama)}</div><div class="nv">${nav}</div><div class="rt">${rt}</div></header>`;
+const head = (nav, rt = "", cls = "") => `<header class="hd"><div class="lg"><span class="mk" style="overflow:hidden">${SET.logo ? `<img src="${esc(SET.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span>${esc(SET.nama)}</div><div class="nv ${cls}">${nav}</div><div class="rt">${rt}</div></header>`;
 function notConn() {
   $("#app").innerHTML = head("") + `<div class="card1"><div class="empty"><b>Aplikasi belum terhubung</b>Admin: buka alamat ini dengan #admin, lalu isi pengaturan Sinkron Google Sheet.</div></div>`;
 }
@@ -216,7 +233,7 @@ function drawGrid() {
   const q = Q.trim().toLowerCase(), list = MENU.filter(p => (CAT == "Semua" || p.cat == CAT) && (!q || p.name.toLowerCase().includes(q)));
   $("#gr").innerHTML = list.map(p => {
     const c = CART[p.id] || 0, out = p.stock < 1, bd = out ? ["x", "Habis"] : p.stock <= 5 ? ["w", "Sisa " + p.stock] : ["", "Tersedia"];
-    return `<div class="card ${out ? "out" : ""}"><div class="ph">${pic(p)}<span class="bd ${bd[0]}">${bd[1]}</span></div><b>${esc(p.name)}</b><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div>${c ? `<div class="qt"><button class="m" aria-label="Kurangi" onclick="chg('${p.id}',-1)">−</button><span>${c}</span><button aria-label="Tambah" onclick="chg('${p.id}',1)">+</button></div>` : `<button class="add" aria-label="Tambah ke pesanan" ${out ? "disabled" : ""} onclick="chg('${p.id}',1)">🛒</button>`}</div></div>`;
+    return `<div class="card ${out ? "out" : ""}"><div class="ph">${pic(p)}<span class="bd ${bd[0]}">${bd[1]}</span></div><b>${esc(p.name)}</b><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div>${c ? `<div class="qt"><button class="m" aria-label="Kurangi" onclick="chg('${p.id}',-1)">−</button><span>${c}</span><button aria-label="Tambah" onclick="chg('${p.id}',1)">+</button></div>` : `<button class="add" aria-label="Tambah ke pesanan" ${out ? "disabled" : ""} onclick="chg('${p.id}',1)"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></button>`}</div></div>`;
   }).join("") || `<div class="empty" style="grid-column:1/-1">Menu tidak ditemukan</div>`;
 }
 function panelHTML(err) {
@@ -226,11 +243,11 @@ function panelHTML(err) {
   ${L.map(i => `<div class="it"><div class="th">${i.photo ? `<img src="${esc(i.photo)}" alt="">` : emo(i.cat)}</div><div class="sp"><b>${esc(i.name)}</b><div class="qt" style="margin:6px 0 0"><button class="m" onclick="chg('${i.id}',-1)">−</button><span>${i.qty}</span><button onclick="chg('${i.id}',1)">+</button></div></div><div style="text-align:right"><small style="color:var(--mu);font-size:11px">Total</small><br><b>${rp(i.qty * i.price)}</b></div></div>`).join("") || `<div class="empty" style="padding:20px">Belum ada menu dipilih</div>`}
   <div class="fl"><label>Catatan (opsional)</label><textarea rows="2" oninput="fin('note',this.value)">${esc(F.note)}</textarea></div>
   <div class="tt"><span>Total</span><span>${rp(tot())}</span></div>${err ? `<div class="err">${esc(err)}</div>` : ""}
-  <button class="bt" id="sb" ${cnt() ? "" : "disabled"} onclick="send()">Kirim Pesanan</button>`;
+  <button class="bt" id="sb" ${cnt() ? "" : "disabled"} onclick="askSend()">Kirim Pesanan</button>`;
 }
 function drawPanel(err) {
   $("#pn").innerHTML = panelHTML(err);
-  $("#bar").innerHTML = cnt() ? `<div class="bar"><button class="bt s" onclick="OPEN=true;drawPanel()"><span>🛒 ${cnt()} item</span><span>Lihat pesanan · ${rp(tot())}</span></button></div>` : "";
+  $("#bar").innerHTML = cnt() ? `<div class="bar"><button class="bt s" onclick="OPEN=true;drawPanel()"><span><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> ${cnt()} item</span><span>Lihat pesanan · ${rp(tot())}</span></button></div>` : "";
   $("#dlg").innerHTML = OPEN ? `<div class="ov" onclick="if(event.target==this)dc()"><div class="sheet">${panelHTML(err)}<button class="bt2" onclick="dc()">Tambah menu lain</button></div></div>` : "";
 }
 function afterChg() { drawGrid(); drawPanel(); }
@@ -243,9 +260,13 @@ function chg(id, d) {
 }
 function fin(k, v) { F[k] = v; sessionStorage.setItem("pos_f", JSON.stringify(F)); }
 const dc = () => { OPEN = false; drawPanel(); };
-async function send() {
+function askSend() {
   if (!F.meja.trim() || !F.nama.trim() || !F.telp.trim()) return drawPanel("Isi nomor bangku, nama, dan no. telepon");
   if (!/^[0-9+\-\s]{8,16}$/.test(F.telp.trim())) return drawPanel("No. telepon tidak valid");
+  $("#cfm").innerHTML = `<div class="ov" style="z-index:25;align-items:center" role="alertdialog" aria-modal="true" aria-labelledby="cft"><div class="sheet" style="border-radius:24px;max-width:380px;text-align:center"><h2 id="cft">Kirim pesanan sekarang?</h2><p style="color:var(--mu);margin:10px 0 4px">Bangku ${esc(F.meja)} · ${esc(F.nama)}<br>${cnt()} item · <b style="color:var(--tx)">${rp(tot())}</b></p><div class="r2"><button class="bt2" style="margin:12px 0 0" onclick="$('#cfm').innerHTML=''">Tidak</button><button class="bt" style="margin:12px 0 0" onclick="send()">Ya, kirim</button></div></div></div>`;
+}
+async function send() {
+  $("#cfm").innerHTML = "";
   document.querySelectorAll("#sb,.sheet .bt").forEach(b => { b.disabled = true; b.textContent = "Mengirim…"; });
   try {
     const r = await api("order", { ...F, items: items().map(i => ({ id: i.id, qty: i.qty })) });
@@ -362,12 +383,19 @@ async function apoll() {
   } catch (e) {}
 }
 function alogout() { AK = ""; sessionStorage.removeItem("pos_akey"); clearInterval(APL); APL = null; alogin(); }
+const AIC = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
+const HB = `<button class="ib hb" aria-label="Buka menu" aria-controls="drw" onclick="drw(1)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>`;
+const drw = o => { $("#drw").classList.toggle("open", !!o); document.body.style.overflow = o ? "hidden" : ""; };
+const goA = p => { PG = p; drw(0); drawA(); };
+function fillDrawer() {
+  $("#dpc").innerHTML = `<div class="dh"><b>${esc(SET.nama)}</b><button class="ib" aria-label="Tutup menu" onclick="drw(0)">✕</button></div>` + (AK ? Object.keys(AIC).map(p => `<button class="di ${p == PG ? "on" : ""}" onclick="goA('${p}')">${AIC[p]} ${p}</button>`).join("") + `<hr><button class="di" onclick="MUTE=!MUTE;fillDrawer()">${MUTE ? "🔇 Suara mati" : "🔔 Suara aktif"}</button><button class="di" onclick="drw(0);alogout()">Keluar</button><div style="padding:6px 14px">${tail()}</div>` : "");
+}
 function drawA() {
   if (!AK) PG = "Setting";
-  const ic = { Dashboard: "📊", Menu: "🍽️", Order: "🧾", Setting: "⚙️" };
-  const nav = AK ? Object.keys(ic).map(p => `<button class="pill ${p == PG ? "on" : ""}" onclick="PG='${p}';drawA()">${ic[p]} ${p}</button>`).join("") : "";
-  const rt = AK ? tail() + `<button class="ib" aria-label="Suara" onclick="MUTE=!MUTE;drawA()">${MUTE ? "🔇" : "🔔"}</button><button class="ib" onclick="alogout()">Keluar</button>` : `<button class="ib" onclick="alogin()">Masuk</button>`;
-  $("#app").innerHTML = head(nav, rt) + ({ Dashboard: pDash, Menu: pMenu, Order: () => ordersView(`<div class="chips">${pills("chip")}</div>`), Setting: pSet }[PG])();
+  const nav = AK ? Object.keys(AIC).map(p => `<button class="pill ${p == PG ? "on" : ""}" onclick="PG='${p}';drawA()">${AIC[p]} ${p}</button>`).join("") : "";
+  const rt = AK ? `<span class="hm">${tail()}</span><button class="ib hm" aria-label="Suara" onclick="MUTE=!MUTE;drawA()">${MUTE ? "🔇" : "🔔"}</button><button class="ib hm" onclick="alogout()">Keluar</button>${HB}` : `<button class="ib" onclick="alogin()">Masuk</button>`;
+  $("#app").innerHTML = head(nav, rt, "adm") + ({ Dashboard: pDash, Menu: pMenu, Order: () => ordersView(`<div class="chips">${pills("chip")}</div>`), Setting: pSet }[PG])();
+  fillDrawer();
 }
 function smooth(p) {
   let d = `M${p[0][0]},${p[0][1]}`;
@@ -399,7 +427,7 @@ function pDash() {
 }
 const fdt = t => new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 function pMenu() {
-  return `<section class="pan"><div class="top"><h2>Menu (${AM.length})</h2><button class="bt" style="width:auto;margin:0;padding:10px 16px" onclick="openMF()">＋ Tambah menu</button></div><div class="grid">${AM.map(p => `<div class="card ${p.aktif ? "" : "out"}"><div class="ph">${pic(p)}<span class="bd ${!p.aktif || p.stock < 1 ? "x" : p.stock <= 5 ? "w" : ""}">${p.aktif ? "Stok " + p.stock : "Nonaktif"}</span></div><b>${esc(p.name)}</b><small style="color:var(--mu);padding:0 4px">${esc(p.cat)}</small><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div></div><div class="r3"><button class="add" onclick="stockDlg('${p.id}')">Stok</button><button class="add" onclick="openMF('${p.id}')">Edit</button><button class="add" style="color:var(--bad)" onclick="delMenu('${p.id}')">Hapus</button></div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada menu</b>Tambahkan menu pertama Anda.</div>`}</div></section>`;
+  return `<section class="pan"><div class="top"><h2>Menu (${AM.length})</h2><button class="bt" style="width:auto;margin:0;padding:10px 16px" onclick="openMF()">＋ Tambah menu</button></div><div class="grid">${AM.map(p => `<div class="card ${p.aktif ? "" : "out"}"><div class="ph">${pic(p)}<span class="bd ${!p.aktif || p.stock < 1 ? "x" : p.stock <= 5 ? "w" : ""}">${p.aktif ? "Stok " + p.stock : "Nonaktif"}</span></div><b>${esc(p.name)}</b><small style="color:var(--mu);padding:0 4px">${esc(p.cat)}</small><div class="ft"><div><small>${p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"}</small><b>${rp(p.price)}</b></div></div><div class="r2"><button class="add" onclick="openMF('${p.id}')">Edit</button><button class="add" style="color:var(--bad)" onclick="delMenu('${p.id}')">Hapus</button></div></div>`).join("") || `<div class="empty" style="grid-column:1/-1"><b>Belum ada menu</b>Tambahkan menu pertama Anda.</div>`}</div></section>`;
 }
 function openMF(id) { const p = AM.find(x => x.id == id); MF = p ? { id: p.id, name: p.name, cat: p.cat, price: p.orig, disc: p.d || 0, stock: p.stock, photo: p.photo, aktif: p.aktif } : { id: "", name: "", cat: "", price: "", disc: 0, stock: 0, photo: "", aktif: true }; drawMF(); }
 function drawMF(err) {
@@ -408,9 +436,10 @@ function drawMF(err) {
   <div class="fl"><label>Nama menu</label><input value="${esc(MF.name)}" oninput="MF.name=this.value"></div>
   <div class="fl"><label>Kategori</label><input list="cl" value="${esc(MF.cat)}" oninput="MF.cat=this.value"><datalist id="cl">${[...new Set(AM.map(p => p.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
   <div class="r2"><div class="fl"><label>Harga normal (Rp)</label><input type="number" inputmode="numeric" value="${MF.price}" oninput="MF.price=this.value"></div><div class="fl"><label>Diskon menu (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${MF.disc}" oninput="MF.disc=this.value"></div></div>
-  <div class="r2"><div class="fl"><label>Stok</label><input type="number" inputmode="numeric" value="${MF.stock}" oninput="MF.stock=this.value"></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
+  <div class="r2"><div class="fl"><label>Stok</label><div class="qt" style="justify-content:space-between;margin:4px 0 0;gap:8px"><button class="m" style="width:38px;height:38px;font-size:20px" aria-label="Kurangi stok" onclick="mfStep(-1)">−</button><b id="mfst" style="font-size:20px" aria-live="polite">${MF.stock}</b><button style="width:38px;height:38px;font-size:20px" aria-label="Tambah stok" onclick="mfStep(1)">+</button></div></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
   ${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt" id="mfs" onclick="saveMF()">Simpan</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
 }
+const mfStep = d => { MF.stock = Math.max(0, (+MF.stock || 0) + d); $("#mfst").textContent = MF.stock; };
 async function saveMF() {
   if (!MF.name.trim() || !(+MF.price > 0)) return drawMF("Isi nama dan harga normal");
   const b = $("#mfs"); b.disabled = true; b.textContent = "Menyimpan…";
@@ -419,12 +448,6 @@ async function saveMF() {
   } catch (e) { drawMF(e.message); }
 }
 async function delMenu(id) { if (!confirm("Hapus menu ini?")) return; try { await api("menudel", { key: AK, id }); aload(); } catch (e) { toast(e.message); } }
-function stockDlg(id) { const p = AM.find(x => x.id == id); ST = { id, name: p.name, v: p.stock }; drawST(); }
-function drawST() {
-  $("#dlg").innerHTML = `<div class="ov" onclick="if(event.target==this)closeD()"><div class="sheet" style="max-width:380px"><h2>Atur stok</h2><p style="margin:4px 0 14px;color:var(--mu)">${esc(ST.name)}</p><div class="qt" style="justify-content:center;gap:12px"><button class="m" style="width:44px;height:44px" aria-label="Kurangi" onclick="stStep(-1)">−</button><input id="sv" type="number" inputmode="numeric" value="${ST.v}" style="width:100px;text-align:center;font-size:20px;font-weight:700" oninput="ST.v=+this.value||0"><button style="width:44px;height:44px" aria-label="Tambah" onclick="stStep(1)">+</button></div><div class="chips" style="justify-content:center;margin-top:12px">${[5, 10, 20].map(n => `<button class="chip" onclick="stStep(${n})">+${n}</button>`).join("")}</div><button class="bt" onclick="saveST()">Simpan stok</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
-}
-const stStep = d => { ST.v = Math.max(0, (+ST.v || 0) + d); $("#sv").value = ST.v; };
-async function saveST() { try { await api("stock", { key: AK, id: ST.id, stock: ST.v }); AM.find(x => x.id == ST.id).stock = ST.v; closeD(); drawA(); toast("Stok diperbarui"); } catch (e) { toast(e.message); } }
 function pSet() {
   const conn = `<section class="pan" style="margin-top:${AK ? 12 : 0}px"><h2>Sinkron Google Sheet</h2><p style="color:var(--mu);font-size:13px;margin:4px 0">Status: ${URLX ? (AK ? "Terhubung ✓" : "Belum masuk") : "Belum terhubung"}</p><div class="fl"><label>URL Web App (Apps Script)</label><input id="cu" value="${esc(URLX)}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="fl"><label>Kode admin</label><input id="ck" type="password" value="${esc(AK)}"></div><div class="r2"><button class="bt" style="margin:0" onclick="aconnect()">Hubungkan</button><button class="bt2" style="margin:0" onclick="adisc()">Putuskan</button></div>${URLX ? `<div class="r2" style="margin-top:8px"><button class="bt2" style="margin:0" onclick="copyL('')">Salin tautan customer</button><button class="bt2" style="margin:0" onclick="copyL('#kasir')">Salin tautan kasir</button></div>` : ""}</section>`;
   if (!AK) return conn;
@@ -455,6 +478,7 @@ function adisc() { localStorage.removeItem("pos_url"); URLX = ""; alogout(); PG 
 const copyL = h => navigator.clipboard.writeText(location.origin + location.pathname + "?u=" + encodeURIComponent(URLX) + h).then(() => toast("Tautan disalin"), () => toast("Gagal menyalin"));
 
 addEventListener("pointerdown", () => { if (MODE != "customer" && !AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC) AC.resume(); });
+addEventListener("keydown", e => { if (e.key == "Escape") { if ($("#drw")) drw(0); $("#cfm").innerHTML = ""; } });
 /* ================= START ================= */
 if (MODE == "admin") admin();
 else if (!URLX) notConn();
