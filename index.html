@@ -1224,6 +1224,106 @@
           grid-template-columns: 1fr;
         }
       }
+      .fb {
+        position: relative;
+        flex: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid var(--ln);
+        background: var(--cd);
+        display: none;
+        place-items: center;
+        font-size: 16px;
+      }
+      .fb.on {
+        background: var(--pr);
+        color: var(--pt);
+        border-color: var(--pr);
+      }
+      #fa:empty {
+        display: none;
+      }
+      #fa {
+        margin: -2px 0 10px;
+      }
+      .fo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--ln);
+        margin-bottom: 8px;
+        text-align: left;
+      }
+      .fo span {
+        flex: 1;
+        font-weight: 600;
+      }
+      .fo small {
+        color: var(--mu);
+      }
+      .fo i {
+        color: var(--mu);
+        width: 16px;
+      }
+      .fo.on {
+        border-color: var(--pr);
+        background: var(--soft);
+        color: var(--pr);
+      }
+      .fo.on i {
+        color: var(--pr);
+      }
+      @media (max-width: 999px) {
+        .fb {
+          display: grid;
+        }
+        #ch {
+          display: none;
+        }
+      }
+      .nb {
+        min-width: 20px;
+        height: 20px;
+        border-radius: 99px;
+        background: var(--bad);
+        color: #fff;
+        font: 700 11px/1 inherit;
+        display: inline-grid;
+        place-items: center;
+        padding: 0 6px;
+        margin-left: 6px;
+        font-style: normal;
+        animation: nbp 1.6s infinite;
+      }
+      .nb[hidden] {
+        display: none;
+      }
+      .di .nb {
+        margin-left: auto;
+      }
+      .hb {
+        position: relative;
+      }
+      .hb .nb {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        margin: 0;
+      }
+      @keyframes nbp {
+        50% {
+          box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.28);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .nb {
+          animation: none;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1232,6 +1332,7 @@
     <div id="dlg"></div>
     <div id="sdl"></div>
     <div id="rdl"></div>
+    <div id="fdl"></div>
     <div id="cfm"></div>
     <div id="toast"></div>
     <div id="prt"></div>
@@ -1422,7 +1523,7 @@
         if (!$("#gr")) {
           $("#app").innerHTML =
             custHead() +
-            `<div class="lay"><section><div class="top"><h2>Menu</h2><div class="sr"><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"><button class="stb" id="stb" onclick="openStatus()" aria-label="Status pemesanan"></button></div></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
+            `<div class="lay"><section><div class="top"><h2>Menu</h2><div class="sr"><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"><button class="fb" id="fb" onclick="openFilter()" aria-label="Filter kategori" aria-haspopup="dialog"><i class="fa-solid fa-sliders" aria-hidden="true"></i></button><button class="stb" id="stb" onclick="openStatus()" aria-label="Status pemesanan"></button></div></div><div id="fa"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
         }
         stBadge();
         drawChips();
@@ -1487,23 +1588,67 @@
           else if (VIEW == "menu") toast("Offline, memakai menu tersimpan");
         }
       }
+      const custCats = () => {
+        const used = [...new Set(MENU.map((p) => p.cat).filter(Boolean))],
+          ord = SET.kat || [];
+        return [
+          "Semua",
+          ...ord.filter((c) => used.includes(c)),
+          ...used.filter((c) => !ord.includes(c)),
+        ];
+      };
+      function setCat(c) {
+        CAT = c;
+        closeFilter();
+        drawChips();
+        drawGrid();
+      }
       function drawChips() {
         if (!$("#ch")) return;
-        const used = [...new Set(MENU.map((p) => p.cat).filter(Boolean))],
-          ord = SET.kat || [],
-          cats = [
-            "Semua",
-            ...ord.filter((c) => used.includes(c)),
-            ...used.filter((c) => !ord.includes(c)),
-          ];
-        $("#ch").innerHTML = cats
+        $("#ch").innerHTML = custCats()
           .map(
-            (c) =>
-              `<button class="chip ${c == CAT ? "on" : ""}" onclick="CAT='${esc(
-                c
-              )}';drawChips();drawGrid()">${esc(c)}</button>`
+            (c, i) =>
+              `<button class="chip ${
+                c == CAT ? "on" : ""
+              }" onclick="setCat(custCats()[${i}])">${esc(c)}</button>`
           )
           .join("");
+        const fb = $("#fb"),
+          fa = $("#fa");
+        if (fb) fb.classList.toggle("on", CAT != "Semua");
+        if (fa)
+          fa.innerHTML =
+            CAT != "Semua"
+              ? `<button class="chip on" onclick="setCat('Semua')" aria-label="Hapus filter ${esc(
+                  CAT
+                )}">Kategori: ${esc(
+                  CAT
+                )} <i class="fa-solid fa-xmark" aria-hidden="true"></i></button>`
+              : "";
+      }
+      function openFilter() {
+        $(
+          "#fdl"
+        ).innerHTML = `<div class="ov" style="z-index:21" onclick="if(event.target==this)closeFilter()"><div class="sheet" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Filter kategori"><div class="top" style="margin-bottom:10px"><h2>Filter Kategori</h2><button class="ib" onclick="closeFilter()" aria-label="Tutup">✕</button></div>${custCats()
+          .map(
+            (c, i) =>
+              `<button class="fo ${
+                c == CAT ? "on" : ""
+              }" role="radio" aria-checked="${
+                c == CAT
+              }" onclick="setCat(custCats()[${i}])"><i class="fa-solid ${
+                c == CAT ? "fa-circle-dot" : "fa-circle"
+              }" aria-hidden="true"></i><span>${esc(c)}</span><small>${
+                c == "Semua"
+                  ? MENU.length
+                  : MENU.filter((p) => p.cat == c).length
+              } menu</small></button>`
+          )
+          .join("")}</div></div>`;
+      }
+      function closeFilter() {
+        const f = $("#fdl");
+        if (f) f.innerHTML = "";
       }
       function drawGrid() {
         if (!$("#gr")) return;
@@ -2597,6 +2742,7 @@
           });
           ORD = AORD = [...m.values()].sort((a, b) => a.ts - b.ts);
           if (fresh.length) alarm(fresh);
+          updNb();
           if (!$("#dlg").innerHTML && (PG == "Dashboard" || PG == "Order"))
             drawA();
         } catch (e) {}
@@ -2608,8 +2754,20 @@
         APL = null;
         alogin();
       }
+      const newCnt = () => AORD.filter((o) => o.status == "Baru").length;
+      const nbd = (p) =>
+        p == "Order"
+          ? `<i class="nb nbc" hidden aria-label="pesanan baru"></i>`
+          : "";
+      function updNb() {
+        const n = newCnt();
+        document.querySelectorAll(".nbc").forEach((el) => {
+          el.textContent = n > 99 ? "99+" : n;
+          el.hidden = !n;
+        });
+      }
       const AIC = { Dashboard: "", Menu: "", Order: "", Setting: "" };
-      const HB = `<button class="ib hb" aria-label="Buka menu" aria-controls="drw" onclick="drw(1)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>`;
+      const HB = `<button class="ib hb" aria-label="Buka menu" aria-controls="drw" onclick="drw(1)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg><i class="nb nbc" hidden aria-label="pesanan baru"></i></button>`;
       const drw = (o) => {
         $("#drw").classList.toggle("open", !!o);
         document.body.style.overflow = o ? "hidden" : "";
@@ -2630,7 +2788,7 @@
                   (p) =>
                     `<button class="di ${
                       p == PG ? "on" : ""
-                    }" onclick="goA('${p}')">${AIC[p]} ${p}</button>`
+                    }" onclick="goA('${p}')">${AIC[p]} ${p}${nbd(p)}</button>`
                 )
                 .join("") +
               `<hr><button class="di" onclick="MUTE=!MUTE;fillDrawer()">${
@@ -2646,7 +2804,9 @@
                 (p) =>
                   `<button class="pill ${
                     p == PG ? "on" : ""
-                  }" onclick="PG='${p}';drawA()">${AIC[p]} ${p}</button>`
+                  }" onclick="PG='${p}';drawA()">${AIC[p]} ${p}${nbd(
+                    p
+                  )}</button>`
               )
               .join("")
           : "";
@@ -2665,6 +2825,7 @@
             Setting: pSet,
           }[PG]();
         fillDrawer();
+        updNb();
       }
       function smooth(p) {
         let d = `M${p[0][0]},${p[0][1]}`;
@@ -3137,6 +3298,7 @@
           if ($("#drw")) drw(0);
           $("#cfm").innerHTML = "";
           if (STO) closeStatus();
+          if ($("#fdl")) closeFilter();
         }
       });
       /* ================= START ================= */
