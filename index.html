@@ -140,6 +140,24 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .dp hr{border:0;border-top:1px solid var(--ln);margin:10px 0}
 .card .r2 .add{width:auto;margin:0;font-size:13px;height:auto;padding:9px 4px}
 @media(prefers-reduced-motion:reduce){.dp,.dbg{transition:none}}
+
+.stp{display:flex;margin:14px 0 6px}
+.stp>div{flex:1;text-align:center;font-size:11px;color:var(--mu);position:relative}
+.stp>div+div:before{content:"";position:absolute;top:13px;right:50%;width:100%;height:3px;background:var(--ln)}
+.stp>div.d:before{background:var(--pr)}
+.stp i{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;margin:0 auto 5px;background:var(--ln);font-style:normal;font-weight:700;font-size:13px}
+.stp .d i{background:var(--pr);color:var(--pt)}
+.stp .c i{box-shadow:0 0 0 4px color-mix(in srgb,var(--pr) 25%,transparent)}
+.stp .d,.stp .c{color:var(--tx);font-weight:600}
+.sc{border:1px solid var(--ln);border-radius:18px;padding:14px;margin-bottom:10px;background:var(--cd)}
+.sc.hl{border:2px solid var(--pr)}
+.sc .rw{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sc small{color:var(--mu)}
+.hi{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln);font-size:14px}
+.hi:last-child{border-bottom:0}
+.wrapS{max-width:720px;margin:0 auto}
+@media(max-width:700px){.hd:has(.nv.cu){flex-wrap:wrap}.nv.cu{order:3;flex:1 1 100%}.nv.cu .pill{flex:1;padding:10px 8px}}
+@media(prefers-reduced-motion:reduce){.stp *{transition:none}}
 </style>
 </head>
 <body>
@@ -195,10 +213,12 @@ const pic = p => p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` :
 
 const LS = { get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 let MJ = "";
-const custHead = () => head("", `<span style="color:var(--mu);font-size:13px;align-self:center">Pesan mandiri</span>`);
+let VIEW = "menu", CODEQ = "";
+const custHead = () => head(`<button class="pill ${VIEW == "menu" ? "on" : ""}" onclick="goV('menu')">🍽️ Menu</button><button class="pill ${VIEW == "status" ? "on" : ""}" onclick="goV('status')">📋 Status Pesanan${actCnt() ? " (" + actCnt() + ")" : ""}</button>`, "", "cu");
 function attachPh() { MENU.forEach(p => { if (p.pv) { const c = LS.get("ph:" + p.id); p.photo = c && c.v == p.pv ? c.d : ""; } }); }
 function fixCart() { Object.keys(CART).forEach(id => { const p = MENU.find(x => x.id == id); if (!p || p.stock < 1) delete CART[id]; else if (CART[id] > p.stock) CART[id] = p.stock; }); }
 function showMenu() {
+  if (VIEW != "menu") return;
   fixCart(); attachPh();
   if (!$("#gr")) {
     $("#app").innerHTML = custHead() + `<div class="lay"><section><div class="top"><h2>Menu</h2><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
@@ -219,7 +239,7 @@ async function cust() {
   $("#dlg").innerHTML = "";
   const c = LS.get("pos_menu"); let shown = false;
   if (c && c.length) { MENU = c; MJ = JSON.stringify(c); showMenu(); shown = true; }
-  else $("#app").innerHTML = custHead() + `<div class="lay"><section><h2>Menu</h2><div class="grid" style="margin-top:14px">${`<div class="card"><div class="ph"></div><div class="sk"></div><div class="sk" style="width:60%"></div></div>`.repeat(6)}</div></section></div>`;
+  else if (VIEW == "menu") $("#app").innerHTML = custHead() + `<div class="lay"><section><h2>Menu</h2><div class="grid" style="margin-top:14px">${`<div class="card"><div class="ph"></div><div class="sk"></div><div class="sk" style="width:60%"></div></div>`.repeat(6)}</div></section></div>`;
   try {
     const r = await api("menu"); setSet(r.set);
     const h = $(".hd"); if (h) h.outerHTML = custHead();
@@ -227,15 +247,17 @@ async function cust() {
     if (js != MJ || !shown) { MJ = js; MENU = r.menu; LS.set("pos_menu", MENU); showMenu(); }
     loadPhotos();
   } catch (e) {
-    if (!shown) $("#app").innerHTML = custHead() + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`;
-    else toast("Offline, memakai menu tersimpan");
+    if (!shown && VIEW == "menu") $("#app").innerHTML = custHead() + `<div class="card1"><div class="empty"><b>Menu belum bisa dimuat</b>${esc(e.message)}<button class="bt" onclick="cust()">Coba lagi</button></div></div>`;
+    else if (VIEW == "menu") toast("Offline, memakai menu tersimpan");
   }
 }
 function drawChips() {
+  if (!$("#ch")) return;
   const cats = ["Semua", ...new Set(MENU.map(p => p.cat).filter(Boolean))];
   $("#ch").innerHTML = cats.map(c => `<button class="chip ${c == CAT ? "on" : ""}" onclick="CAT='${esc(c)}';drawChips();drawGrid()">${esc(c)}</button>`).join("");
 }
 function drawGrid() {
+  if (!$("#gr")) return;
   const q = Q.trim().toLowerCase(), list = MENU.filter(p => (CAT == "Semua" || p.cat == CAT) && (!q || p.name.toLowerCase().includes(q)));
   $("#gr").innerHTML = list.map(p => {
     const c = CART[p.id] || 0, out = p.stock < 1, bd = out ? ["x", "Habis"] : p.stock <= 5 ? ["w", "Sisa " + p.stock] : ["", "Tersedia"];
@@ -252,6 +274,7 @@ function panelHTML(err) {
   <button class="bt" id="sb" ${cnt() ? "" : "disabled"} onclick="askSend()">Kirim Pesanan</button>`;
 }
 function drawPanel(err) {
+  if (!$("#pn")) return;
   $("#pn").innerHTML = panelHTML(err);
   $("#bar").innerHTML = cnt() ? `<div class="bar"><button class="bt s" onclick="OPEN=true;drawPanel()"><span><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> ${cnt()} item</span><span>Lihat pesanan · ${rp(tot())}</span></button></div>` : "";
   $("#dlg").innerHTML = OPEN ? `<div class="ov" onclick="if(event.target==this)dc()"><div class="sheet">${panelHTML(err)}<button class="bt2" onclick="dc()">Tambah menu lain</button></div></div>` : "";
@@ -274,11 +297,108 @@ function askSend() {
 async function send() {
   $("#cfm").innerHTML = "";
   document.querySelectorAll("#sb,.sheet .bt").forEach(b => { b.disabled = true; b.textContent = "Mengirim…"; });
+  const L = items().map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
   try {
-    const r = await api("order", { ...F, items: items().map(i => ({ id: i.id, qty: i.qty })) });
-    CART = {}; OPEN = false; $("#dlg").innerHTML = ""; $("#bar").innerHTML = "";
-    $("#dlg").innerHTML = `<div class="ov"><div class="sheet" style="text-align:center"><div style="font-size:56px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu)">Nomor pesanan <b>${esc(r.id)}</b> untuk bangku ${esc(F.meja)}.<br>Kasir sudah diberi tahu. Total ${rp(r.total)}.</p><button class="bt" onclick="cust()">Pesan lagi</button></div></div>`;
+    const r = await api("order", { ...F, link: location.origin + location.pathname, items: L.map(i => ({ id: i.id, qty: i.qty })) });
+    HIST = HIST.filter(h => h.id != r.id);
+    HIST.unshift({ id: r.id, meja: F.meja, nama: F.nama, total: r.total, ts: Date.now(), items: L, status: "Baru" });
+    saveHist();
+    CART = {}; OPEN = false; $("#dlg").innerHTML = ""; JUST = r.id;
+    toast("Pesanan terkirim ✅");
+    goV("status");
   } catch (e) { drawPanel(e.message); }
+}
+
+/* ================= STATUS PESANAN (CUSTOMER) ================= */
+const HK = "pos_hist";
+let HIST = LS.get(HK) || [], TR = {}, JUST = "", TPOLL = null, TERR = "", CODEERR = "";
+const saveHist = () => LS.set(HK, HIST.slice(0, 50));
+const isFinal = s => s == "Lunas" || s == "Batal";
+const actCnt = () => HIST.filter(h => !isFinal(h.status || "Baru")).length;
+const merged = h => ({ ...h, ...(TR[h.id] || {}) });
+const fdt2 = t => new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const sLabel = s => s == "Baru" ? "Dipesan" : s;
+
+function goV(v) {
+  VIEW = v; OPEN = false; if (v == "menu") JUST = ""; $("#dlg").innerHTML = ""; clearInterval(TPOLL); TPOLL = null;
+  if (v == "status") { drawStatus(); refreshTr(); TPOLL = setInterval(refreshTr, 5000); }
+  else { const h = $(".hd"); $("#app").innerHTML = ""; if (MENU.length) showMenu(); else cust(); }
+  window.scrollTo(0, 0);
+}
+
+async function refreshTr(force) {
+  if (document.hidden && !force) return;
+  const ids = HIST.filter(h => force || !isFinal(h.status || "Baru")).map(h => h.id);
+  if (!ids.length) return;
+  try {
+    const r = await api("track", { ids });
+    TERR = "";
+    (r.orders || []).forEach(o => {
+      const h = HIST.find(x => String(x.id).toLowerCase() == String(o.id).toLowerCase()); if (!h) return;
+      const was = h.status || "Baru";
+      TR[h.id] = o; h.status = o.status;
+      if (o.status != was) {
+        if (o.status == "Selesai") { toast("Pesanan " + h.id + " sudah selesai! 🎉"); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }
+        else if (o.status == "Diproses") toast("Pesanan " + h.id + " sedang diproses");
+        else if (o.status == "Lunas") toast("Pembayaran " + h.id + " diterima. Terima kasih!");
+      }
+    });
+    saveHist();
+  } catch (e) { TERR = e.message; }
+  if (VIEW == "status") drawStatus(true);
+}
+
+function stepper(st) {
+  const cur = st == "Baru" ? 0 : st == "Diproses" ? 1 : st == "Selesai" ? 2 : 3, done = st == "Lunas" ? 4 : cur;
+  return `<div class="stp" role="img" aria-label="Tahap: ${sLabel(st)}">${["Dipesan", "Diproses", "Selesai", "Dibayar"].map((n, i) => `<div class="${i < done ? "d" : ""} ${i == cur && st != "Lunas" ? "c" : ""}"><i>${i < done ? "✓" : i + 1}</i>${n}</div>`).join("")}</div>`;
+}
+function payLine(o) {
+  const st = o.status;
+  if (st == "Batal") return "";
+  if (st == "Lunas") return `<span class="tag Lunas">Lunas${o.metode ? " · " + esc(o.metode) : ""}</span>`;
+  return `<span class="tag BelumDibayar">Belum dibayar</span>`;
+}
+function hint(st) {
+  return st == "Baru" ? "Pesanan sudah diterima kasir dan menunggu diproses." : st == "Diproses" ? "Pesanan sedang disiapkan." : st == "Selesai" ? "Pesanan sudah selesai. Silakan lakukan pembayaran ke kasir." : st == "Lunas" ? "Pembayaran sudah diterima. Terima kasih!" : "Pesanan dibatalkan.";
+}
+function itemsTxt(o) { return (o.items || []).map(i => i.qty + "× " + esc(i.name)).join(", "); }
+function sCard(h) {
+  const o = merged(h), st = o.status || "Baru";
+  return `<div class="sc ${h.id == JUST ? "hl" : ""}"><div class="rw"><div><b style="font-size:17px">${esc(o.id)}</b><br><small>${fdt2(o.ts)} · Bangku ${esc(o.meja)} · ${esc(o.nama)}</small></div><span class="tag ${st}">${sLabel(st)}</span></div>
+  ${st == "Batal" ? "" : stepper(st)}
+  <p style="margin:6px 0;font-size:14px">${hint(st)}</p>
+  ${o.items && o.items.length ? `<div style="font-size:13px;color:var(--mu);margin:4px 0">${itemsTxt(o)}</div>` : ""}
+  <div class="rw" style="margin-top:8px">${payLine({ ...o, status: st })}<b>${rp(o.total)}</b></div></div>`;
+}
+function drawStatus(keepInput) {
+  if (VIEW != "status") return;
+  const keep = keepInput && $("#kd") ? $("#kd").value : "", foc = keepInput && $("#kd") && document.activeElement == $("#kd");
+  const act = HIST.filter(h => !isFinal(h.status || "Baru")), his = HIST.filter(h => isFinal(h.status || "Baru"));
+  $("#app").innerHTML = custHead() + `<div class="wrapS">
+  ${JUST ? `<div class="pan" style="margin-bottom:12px;text-align:center"><div style="font-size:44px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu);margin:8px 0 0">Kode order kamu <b style="color:var(--tx);font-size:18px">${esc(JUST)}</b>.<br>Simpan kode ini untuk cek status pesanan kapan saja.</p></div>` : ""}
+  <section class="pan" style="margin-bottom:12px"><h2 style="font-size:17px">Cek status dengan kode order</h2><div style="display:flex;gap:8px;margin-top:10px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Masukkan kode order" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div>${CODEERR ? `<div class="err">${esc(CODEERR)}</div>` : ""}</section>
+  ${TERR ? `<div class="err" style="margin:0 4px 10px">Status belum bisa diperbarui: ${esc(TERR)}</div>` : ""}
+  <section class="pan" style="margin-bottom:12px"><div class="top" style="margin-bottom:8px"><h2 style="font-size:17px">Pesanan aktif</h2><small style="color:var(--mu)">diperbarui otomatis</small></div>${act.map(sCard).join("") || `<div class="empty" style="padding:18px 8px"><b>Tidak ada pesanan aktif</b>Pesan dari menu atau masukkan kode order di atas.</div>`}</section>
+  <section class="pan"><div class="top" style="margin-bottom:4px"><h2 style="font-size:17px">Riwayat order</h2>${his.length ? `<a style="color:var(--bad);font-size:13px;text-decoration:underline;cursor:pointer" onclick="clearHist()">Hapus riwayat</a>` : ""}</div>${his.map(h => { const o = merged(h), st = o.status; return `<div class="hi"><div style="min-width:0"><b>${esc(o.id)}</b> <span class="tag ${st}" style="margin-left:4px">${sLabel(st)}</span><br><small style="color:var(--mu)">${fdt2(o.ts)}${o.items && o.items.length ? " · " + itemsTxt(o) : ""}</small></div><b>${rp(o.total)}</b></div>`; }).join("") || `<div class="empty" style="padding:18px 8px">Belum ada riwayat. Pesanan yang sudah lunas atau dibatalkan akan tersimpan di sini.</div>`}</section></div>`;
+  if (keepInput && $("#kd")) { $("#kd").value = keep; if (foc) $("#kd").focus(); }
+}
+async function addCode() {
+  const code = $("#kd").value.trim().replace(/\s+/g, "").toUpperCase(); CODEERR = "";
+  if (!code) { CODEERR = "Isi kode order terlebih dahulu"; return drawStatus(); }
+  const ex = HIST.find(h => String(h.id).toLowerCase() == code.toLowerCase());
+  if (ex) { JUST = ex.id; toast("Kode sudah ada di daftar"); refreshTr(true); return drawStatus(); }
+  const b = $(".wrapS .bt"); if (b) { b.disabled = true; b.textContent = "Mencari…"; }
+  try {
+    const r = await api("track", { ids: [code] }), o = (r.orders || [])[0];
+    if (!o) { CODEERR = "Kode order tidak ditemukan. Periksa kembali kode kamu."; return drawStatus(); }
+    HIST.unshift({ id: o.id, meja: o.meja, nama: o.nama, total: o.total, ts: o.ts || Date.now(), items: o.items || [], status: o.status || "Baru" });
+    TR[o.id] = o; saveHist(); JUST = o.id; TERR = "";
+  } catch (e) { CODEERR = e.message; }
+  drawStatus();
+}
+function clearHist() {
+  if (!confirm("Hapus riwayat di perangkat ini? Pesanan aktif tetap ditampilkan.")) return;
+  HIST = HIST.filter(h => !isFinal(h.status || "Baru")); saveHist(); drawStatus();
 }
 
 /* ================= KASIR ================= */
@@ -550,7 +670,7 @@ addEventListener("keydown", e => { if (e.key == "Escape") { if ($("#drw")) drw(0
 if (MODE == "admin") admin();
 else if (!URLX) notConn();
 else if (KASIR) { if (KEY) { AC = null; poll(true); } else login(); }
-else cust();
+else { const QK = new URLSearchParams(location.search).get("kode"); if (QK) { VIEW = "status"; CODEQ = QK; } cust(); if (QK) { goV("status"); setTimeout(() => { const i = $("#kd"); if (i) { i.value = CODEQ; addCode(); } }, 50); } if (actCnt()) refreshTr(true).then(() => { if (VIEW == "menu") { const h = $(".hd"); if (h) h.outerHTML = custHead(); } }); }
 </script>
 </body>
 </html>
