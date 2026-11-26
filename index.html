@@ -309,32 +309,29 @@ async function send() {
   const L = items().map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
   try {
     const r = await api("order", { ...F, link: location.origin + location.pathname, items: L.map(i => ({ id: i.id, qty: i.qty })) });
-    HIST = HIST.filter(h => h.id != r.id);
     const o = { id: r.id, meja: F.meja, nama: F.nama, telp: F.telp, note: F.note, total: r.total, ts: Date.now(), items: L, status: "Baru" };
-    HIST.unshift({ id: r.id, meja: F.meja, nama: F.nama, total: r.total, ts: o.ts, items: L, status: "Baru" });
-    saveHist(); fin("note", "");
+    fin("note", "");
     CART = {}; OPEN = false; $("#dlg").innerHTML = "";
     afterChg(); stBadge(); showReceipt(o);
   } catch (e) { drawPanel(e.message); }
 }
 
 /* ================= STATUS PESANAN (CUSTOMER) ================= */
-const HK = "pos_hist";
-let HIST = LS.get(HK) || [], TR = {}, JUST = "", TPOLL = null, TERR = "", CODEERR = "";
-const saveHist = () => LS.set(HK, HIST.slice(0, 50));
+/* Status pesanan TIDAK disimpan di perangkat: daftar kosong sampai customer memasukkan kode order, dan selalu dibaca dari Google Sheet. */
+try { localStorage.removeItem("pos_hist"); } catch (e) {}
+let HIST = [], TR = {}, JUST = "", TERR = "", CODEERR = "", LAST = 0;
 const isFinal = s => s == "Lunas" || s == "Batal";
-const actCnt = () => HIST.filter(h => !isFinal(h.status || "Baru")).length;
 const merged = h => ({ ...h, ...(TR[h.id] || {}) });
 const fdt2 = t => new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const sLabel = s => s == "Baru" ? "Dipesan" : s;
 
 async function refreshTr(force) {
-  if (MODE != "customer" || (document.hidden && !force)) return;
+  if (MODE != "customer" || !STO || (document.hidden && !force)) return;
   const ids = HIST.filter(h => force || !isFinal(h.status || "Baru")).map(h => h.id).slice(0, 30);
   if (!ids.length) return;
   try {
     const r = await api("track", { ids });
-    TERR = "";
+    TERR = ""; LAST = Date.now();
     (r.orders || []).forEach(o => {
       const h = HIST.find(x => String(x.id).toLowerCase() == String(o.id).toLowerCase()); if (!h) return;
       const was = h.status || "Baru";
@@ -346,9 +343,8 @@ async function refreshTr(force) {
         else if (o.status == "Batal") toast("Pesanan " + h.id + " dibatalkan");
       }
     });
-    saveHist();
-  } catch (e) { TERR = /tidak dikenal/i.test(e.message) ? "Server Google Sheet belum mendukung cek status. Pasang code.gs terbaru lalu Deploy > New version." : e.message; }
-  stBadge(); if (STO) drawStatusList();
+  } catch (e) { TERR = /tidak dikenal/i.test(e.message) ? "Backend Google Sheet belum diperbarui (aksi cek status belum ada). Pasang code.gs terbaru, lalu Deploy > Manage deployments > Edit > New version." : e.message; }
+  if (STO) drawStatusList();
 }
 
 function stepper(st) {
@@ -374,45 +370,40 @@ function sCard(h) {
   <div class="rw" style="margin-top:8px">${payLine({ ...o, status: st })}<b>${rp(o.total)}</b></div></div>`;
 }
 let STO = false, RCP = null;
-function stBadge() { const b = $("#stb"); if (b) b.innerHTML = `📋 Status${actCnt() ? `<i class="bg">${actCnt()}</i>` : ""}`; }
-function openStatus(code) {
-  STO = true; JUST = code || ""; CODEERR = "";
+function stBadge() { const b = $("#stb"); if (b) b.innerHTML = "📋 Status"; }
+function openStatus() {
+  STO = true; JUST = ""; CODEERR = ""; TERR = ""; HIST = []; TR = {}; LAST = 0;
   $("#sdl").innerHTML = `<div class="ov" style="z-index:22" onclick="if(event.target==this)closeStatus()"><div class="sheet" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Status pesanan">
   <div class="top" style="margin-bottom:10px"><h2>Status Pesanan</h2><button class="ib" onclick="closeStatus()" aria-label="Tutup">✕</button></div>
-  <div class="box" style="margin-top:0"><h3>Cek dengan kode order</h3><div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Masukkan kode order" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" id="kdb" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div><div id="kde"></div></div>
+  <div class="box" style="margin-top:0"><h3>Masukkan kode order</h3><div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Contoh: PK7M2X" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" id="kdb" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div><div id="kde"></div></div>
   <div id="stl"></div></div></div>`;
-  drawStatusList(); refreshTr(true);
+  drawStatusList();
 }
-function closeStatus() { STO = false; JUST = ""; $("#sdl").innerHTML = ""; }
+function closeStatus() { STO = false; JUST = ""; HIST = []; TR = {}; $("#sdl").innerHTML = ""; }
 function drawStatusList() {
   const el = $("#stl"); if (!el) return;
-  const act = HIST.filter(h => !isFinal(h.status || "Baru")), his = HIST.filter(h => isFinal(h.status || "Baru"));
   const ke = $("#kde"); if (ke) ke.innerHTML = CODEERR ? `<div class="err">${esc(CODEERR)}</div>` : "";
-  el.innerHTML = `${TERR ? `<div class="err" style="margin:0 4px 10px">Status belum bisa diperbarui: ${esc(TERR)}</div>` : ""}
-  <div class="top" style="margin-bottom:8px"><h2 style="font-size:17px">Pesanan aktif</h2><small style="color:var(--mu)">diperbarui otomatis</small></div>${act.map(sCard).join("") || `<div class="empty" style="padding:18px 8px"><b>Tidak ada pesanan aktif</b>Pesan dari menu atau masukkan kode order di atas.</div>`}
-  <div class="top" style="margin:14px 0 4px"><h2 style="font-size:17px">Riwayat order</h2>${his.length ? `<a style="color:var(--bad);font-size:13px;text-decoration:underline;cursor:pointer" onclick="clearHist()">Hapus riwayat</a>` : ""}</div>${his.map(h => { const o = merged(h), st = o.status; return `<div class="hi"><div style="min-width:0"><b>${esc(o.id)}</b> <span class="tag ${st}" style="margin-left:4px">${sLabel(st)}</span><br><small style="color:var(--mu)">${fdt2(o.ts)}${o.items && o.items.length ? " · " + itemsTxt(o) : ""}</small></div><b>${rp(o.total)}</b></div>`; }).join("") || `<div class="empty" style="padding:18px 8px">Belum ada riwayat. Pesanan yang sudah lunas atau dibatalkan akan tersimpan di sini.</div>`}`;
+  const hm = LAST ? new Date(LAST).toLocaleTimeString("id-ID") : "";
+  el.innerHTML = `${TERR ? `<div class="err" style="margin:0 4px 10px">${esc(TERR)}</div>` : ""}
+  ${HIST.length ? `<div class="top" style="margin-bottom:8px"><small style="color:var(--mu)">${hm ? "Sinkron dengan database · " + hm : "Menghubungkan…"}</small><span><a style="font-size:13px;text-decoration:underline;cursor:pointer;margin-right:12px" onclick="refreshTr(true)">Perbarui</a><a style="color:var(--bad);font-size:13px;text-decoration:underline;cursor:pointer" onclick="clearHist()">Hapus</a></span></div>${HIST.map(sCard).join("")}` : `<div class="empty" style="padding:22px 8px"><b>Belum ada pesanan ditampilkan</b>Masukkan kode order di atas untuk melihat status pesanan kamu.</div>`}`;
 }
 async function addCode() {
   const code = $("#kd").value.trim().replace(/\s+/g, "").toUpperCase(); CODEERR = "";
   if (!code) { CODEERR = "Isi kode order terlebih dahulu"; return drawStatusList(); }
-  const ex = HIST.find(h => String(h.id).toLowerCase() == code.toLowerCase());
-  if (ex) { JUST = ex.id; toast("Kode sudah ada di daftar"); $("#kd").value = ""; refreshTr(true); return drawStatusList(); }
+  if (HIST.find(h => String(h.id).toLowerCase() == code.toLowerCase())) { JUST = code; $("#kd").value = ""; refreshTr(true); return drawStatusList(); }
   const b = $("#kdb"); if (b) { b.disabled = true; b.textContent = "Mencari…"; }
   try {
     const r = await api("track", { ids: [code] }), o = (r.orders || [])[0];
     if (!o) CODEERR = "Kode order tidak ditemukan. Periksa kembali kode kamu.";
     else {
       HIST.unshift({ id: o.id, meja: o.meja, nama: o.nama, total: o.total, ts: o.ts || Date.now(), items: o.items || [], status: o.status || "Baru" });
-      TR[o.id] = o; saveHist(); JUST = o.id; TERR = ""; $("#kd").value = ""; stBadge();
+      TR[o.id] = o; JUST = o.id; TERR = ""; LAST = Date.now(); if ($("#kd")) $("#kd").value = "";
     }
-  } catch (e) { CODEERR = e.message; }
-  if (b) { b.disabled = false; b.textContent = "Cek"; }
+  } catch (e) { CODEERR = /tidak dikenal/i.test(e.message) ? "Backend Google Sheet belum diperbarui. Pasang code.gs terbaru lalu Deploy > New version." : e.message; }
+  const b2 = $("#kdb"); if (b2) { b2.disabled = false; b2.textContent = "Cek"; }
   drawStatusList();
 }
-function clearHist() {
-  if (!confirm("Hapus riwayat di perangkat ini? Pesanan aktif tetap ditampilkan.")) return;
-  HIST = HIST.filter(h => !isFinal(h.status || "Baru")); saveHist(); drawStatusList();
-}
+function clearHist() { HIST = []; TR = {}; JUST = ""; drawStatusList(); }
 
 /* ===== STRUK + KODE ORDER (CUSTOMER) ===== */
 function custStruk(o) {
@@ -423,10 +414,10 @@ function custStruk(o) {
 function showReceipt(o) {
   RCP = o;
   $("#rdl").innerHTML = `<div class="ov" style="z-index:24" role="dialog" aria-modal="true" aria-label="Struk pesanan"><div class="sheet" style="max-width:400px">
-  <div style="text-align:center"><div style="font-size:40px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu);margin:6px 0 0">Kode order kamu</p><div class="kode">${esc(o.id)}</div><button class="ib" onclick="copyKode()">Salin kode</button></div>
+  <div style="text-align:center"><div style="font-size:40px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu);margin:6px 0 0">Kode order kamu — simpan untuk cek status di tombol 📋 Status</p><div class="kode">${esc(o.id)}</div><button class="ib" onclick="copyKode()">Salin kode</button></div>
   <div class="rcpbox">${custStruk(o)}</div>
   <div class="r2"><button class="bt2" style="margin:0" onclick="closeRcp()">Tutup</button><button class="bt" style="margin:0" onclick="savePdf()">Simpan PDF</button></div>
-  <button class="bt2" onclick="closeRcp();openStatus('${esc(o.id)}')">Lihat status pesanan</button></div></div>`;
+</div></div>`;
 }
 const closeRcp = () => { $("#rdl").innerHTML = ""; };
 const copyKode = () => RCP && navigator.clipboard.writeText(RCP.id).then(() => toast("Kode order disalin"), () => toast("Gagal menyalin"));
@@ -713,9 +704,8 @@ else {
   cust();
   const QK = new URLSearchParams(location.search).get("kode");
   if (QK) { openStatus(); setTimeout(() => { const i = $("#kd"); if (i) { i.value = QK; addCode(); } }, 50); }
-  setInterval(() => refreshTr(), 5000);
+  setInterval(() => refreshTr(), 4000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshTr(true); });
-  if (actCnt()) refreshTr(true);
 }
 </script>
 </body>
