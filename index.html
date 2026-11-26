@@ -158,10 +158,19 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .wrapS{max-width:720px;margin:0 auto}
 @media(max-width:700px){.hd:has(.nv.cu){flex-wrap:wrap}.nv.cu{order:3;flex:1 1 100%}.nv.cu .pill{flex:1;padding:10px 8px}}
 @media(prefers-reduced-motion:reduce){.stp *{transition:none}}
+
+.sr{display:flex;gap:8px;align-items:center;flex:1 1 auto;max-width:380px;justify-content:flex-end}
+.sr .se{flex:1;min-width:0;max-width:none}
+.stb{position:relative;flex:none;height:42px;padding:0 14px;border-radius:12px;background:var(--pr);color:var(--pt);font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.stb .bg{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:99px;background:var(--bad);color:#fff;font-style:normal;font-size:11px;display:grid;place-items:center;padding:0 5px}
+@media(max-width:700px){.sr{flex:1 1 100%;max-width:none}}
+.kode{font:800 28px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:2px;background:var(--soft);border-radius:12px;padding:10px;margin:6px 0 10px;text-align:center;user-select:all}
+.rcpbox{background:var(--soft);border-radius:14px;padding:14px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:10px 0}
+@media print{#prt.cu{margin:10mm auto 0;width:80mm}}
 </style>
 </head>
 <body>
-<div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="cfm"></div><div id="toast"></div><div id="prt"></div>
+<div id="app"></div><div id="ban"></div><div id="dlg"></div><div id="sdl"></div><div id="rdl"></div><div id="cfm"></div><div id="toast"></div><div id="prt"></div>
 <div id="drw" class="drw"><div class="dbg" onclick="drw(0)"></div><aside class="dp" role="dialog" aria-label="Menu admin"><div id="dpc"></div></aside></div>
 <script>
 /* ===== PENGATURAN: tempel URL Web App Google Apps Script di sini ===== */
@@ -214,16 +223,16 @@ const pic = p => p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy">` :
 const LS = { get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 let MJ = "";
 let VIEW = "menu", CODEQ = "";
-const custHead = () => head(`<button class="pill ${VIEW == "menu" ? "on" : ""}" onclick="goV('menu')">🍽️ Menu</button><button class="pill ${VIEW == "status" ? "on" : ""}" onclick="goV('status')">📋 Status Pesanan${actCnt() ? " (" + actCnt() + ")" : ""}</button>`, "", "cu");
+const custHead = () => head("", "", "cu");
 function attachPh() { MENU.forEach(p => { if (p.pv) { const c = LS.get("ph:" + p.id); p.photo = c && c.v == p.pv ? c.d : ""; } }); }
 function fixCart() { Object.keys(CART).forEach(id => { const p = MENU.find(x => x.id == id); if (!p || p.stock < 1) delete CART[id]; else if (CART[id] > p.stock) CART[id] = p.stock; }); }
 function showMenu() {
   if (VIEW != "menu") return;
   fixCart(); attachPh();
   if (!$("#gr")) {
-    $("#app").innerHTML = custHead() + `<div class="lay"><section><div class="top"><h2>Menu</h2><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
+    $("#app").innerHTML = custHead() + `<div class="lay"><section><div class="top"><h2>Menu</h2><div class="sr"><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" oninput="Q=this.value;drawGrid()"><button class="stb" id="stb" onclick="openStatus()" aria-label="Status pemesanan"></button></div></div><div class="chips" id="ch"></div><div class="grid" id="gr"></div></section><aside id="pn"></aside></div><div id="bar"></div>`;
   }
-  drawChips(); drawGrid(); drawPanel();
+  stBadge(); drawChips(); drawGrid(); drawPanel();
 }
 async function loadPhotos() {
   const need = MENU.filter(p => p.pv && !p.photo).map(p => p.id);
@@ -301,11 +310,11 @@ async function send() {
   try {
     const r = await api("order", { ...F, link: location.origin + location.pathname, items: L.map(i => ({ id: i.id, qty: i.qty })) });
     HIST = HIST.filter(h => h.id != r.id);
-    HIST.unshift({ id: r.id, meja: F.meja, nama: F.nama, total: r.total, ts: Date.now(), items: L, status: "Baru" });
-    saveHist();
-    CART = {}; OPEN = false; $("#dlg").innerHTML = ""; JUST = r.id;
-    toast("Pesanan terkirim ✅");
-    goV("status");
+    const o = { id: r.id, meja: F.meja, nama: F.nama, telp: F.telp, note: F.note, total: r.total, ts: Date.now(), items: L, status: "Baru" };
+    HIST.unshift({ id: r.id, meja: F.meja, nama: F.nama, total: r.total, ts: o.ts, items: L, status: "Baru" });
+    saveHist(); fin("note", "");
+    CART = {}; OPEN = false; $("#dlg").innerHTML = "";
+    afterChg(); stBadge(); showReceipt(o);
   } catch (e) { drawPanel(e.message); }
 }
 
@@ -319,16 +328,9 @@ const merged = h => ({ ...h, ...(TR[h.id] || {}) });
 const fdt2 = t => new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const sLabel = s => s == "Baru" ? "Dipesan" : s;
 
-function goV(v) {
-  VIEW = v; OPEN = false; if (v == "menu") JUST = ""; $("#dlg").innerHTML = ""; clearInterval(TPOLL); TPOLL = null;
-  if (v == "status") { drawStatus(); refreshTr(); TPOLL = setInterval(refreshTr, 5000); }
-  else { const h = $(".hd"); $("#app").innerHTML = ""; if (MENU.length) showMenu(); else cust(); }
-  window.scrollTo(0, 0);
-}
-
 async function refreshTr(force) {
-  if (document.hidden && !force) return;
-  const ids = HIST.filter(h => force || !isFinal(h.status || "Baru")).map(h => h.id);
+  if (MODE != "customer" || (document.hidden && !force)) return;
+  const ids = HIST.filter(h => force || !isFinal(h.status || "Baru")).map(h => h.id).slice(0, 30);
   if (!ids.length) return;
   try {
     const r = await api("track", { ids });
@@ -341,11 +343,12 @@ async function refreshTr(force) {
         if (o.status == "Selesai") { toast("Pesanan " + h.id + " sudah selesai! 🎉"); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }
         else if (o.status == "Diproses") toast("Pesanan " + h.id + " sedang diproses");
         else if (o.status == "Lunas") toast("Pembayaran " + h.id + " diterima. Terima kasih!");
+        else if (o.status == "Batal") toast("Pesanan " + h.id + " dibatalkan");
       }
     });
     saveHist();
-  } catch (e) { TERR = e.message; }
-  if (VIEW == "status") drawStatus(true);
+  } catch (e) { TERR = /tidak dikenal/i.test(e.message) ? "Server Google Sheet belum mendukung cek status. Pasang code.gs terbaru lalu Deploy > New version." : e.message; }
+  stBadge(); if (STO) drawStatusList();
 }
 
 function stepper(st) {
@@ -370,35 +373,71 @@ function sCard(h) {
   ${o.items && o.items.length ? `<div style="font-size:13px;color:var(--mu);margin:4px 0">${itemsTxt(o)}</div>` : ""}
   <div class="rw" style="margin-top:8px">${payLine({ ...o, status: st })}<b>${rp(o.total)}</b></div></div>`;
 }
-function drawStatus(keepInput) {
-  if (VIEW != "status") return;
-  const keep = keepInput && $("#kd") ? $("#kd").value : "", foc = keepInput && $("#kd") && document.activeElement == $("#kd");
+let STO = false, RCP = null;
+function stBadge() { const b = $("#stb"); if (b) b.innerHTML = `📋 Status${actCnt() ? `<i class="bg">${actCnt()}</i>` : ""}`; }
+function openStatus(code) {
+  STO = true; JUST = code || ""; CODEERR = "";
+  $("#sdl").innerHTML = `<div class="ov" style="z-index:22" onclick="if(event.target==this)closeStatus()"><div class="sheet" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Status pesanan">
+  <div class="top" style="margin-bottom:10px"><h2>Status Pesanan</h2><button class="ib" onclick="closeStatus()" aria-label="Tutup">✕</button></div>
+  <div class="box" style="margin-top:0"><h3>Cek dengan kode order</h3><div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Masukkan kode order" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" id="kdb" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div><div id="kde"></div></div>
+  <div id="stl"></div></div></div>`;
+  drawStatusList(); refreshTr(true);
+}
+function closeStatus() { STO = false; JUST = ""; $("#sdl").innerHTML = ""; }
+function drawStatusList() {
+  const el = $("#stl"); if (!el) return;
   const act = HIST.filter(h => !isFinal(h.status || "Baru")), his = HIST.filter(h => isFinal(h.status || "Baru"));
-  $("#app").innerHTML = custHead() + `<div class="wrapS">
-  ${JUST ? `<div class="pan" style="margin-bottom:12px;text-align:center"><div style="font-size:44px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu);margin:8px 0 0">Kode order kamu <b style="color:var(--tx);font-size:18px">${esc(JUST)}</b>.<br>Simpan kode ini untuk cek status pesanan kapan saja.</p></div>` : ""}
-  <section class="pan" style="margin-bottom:12px"><h2 style="font-size:17px">Cek status dengan kode order</h2><div style="display:flex;gap:8px;margin-top:10px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Masukkan kode order" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div>${CODEERR ? `<div class="err">${esc(CODEERR)}</div>` : ""}</section>
-  ${TERR ? `<div class="err" style="margin:0 4px 10px">Status belum bisa diperbarui: ${esc(TERR)}</div>` : ""}
-  <section class="pan" style="margin-bottom:12px"><div class="top" style="margin-bottom:8px"><h2 style="font-size:17px">Pesanan aktif</h2><small style="color:var(--mu)">diperbarui otomatis</small></div>${act.map(sCard).join("") || `<div class="empty" style="padding:18px 8px"><b>Tidak ada pesanan aktif</b>Pesan dari menu atau masukkan kode order di atas.</div>`}</section>
-  <section class="pan"><div class="top" style="margin-bottom:4px"><h2 style="font-size:17px">Riwayat order</h2>${his.length ? `<a style="color:var(--bad);font-size:13px;text-decoration:underline;cursor:pointer" onclick="clearHist()">Hapus riwayat</a>` : ""}</div>${his.map(h => { const o = merged(h), st = o.status; return `<div class="hi"><div style="min-width:0"><b>${esc(o.id)}</b> <span class="tag ${st}" style="margin-left:4px">${sLabel(st)}</span><br><small style="color:var(--mu)">${fdt2(o.ts)}${o.items && o.items.length ? " · " + itemsTxt(o) : ""}</small></div><b>${rp(o.total)}</b></div>`; }).join("") || `<div class="empty" style="padding:18px 8px">Belum ada riwayat. Pesanan yang sudah lunas atau dibatalkan akan tersimpan di sini.</div>`}</section></div>`;
-  if (keepInput && $("#kd")) { $("#kd").value = keep; if (foc) $("#kd").focus(); }
+  const ke = $("#kde"); if (ke) ke.innerHTML = CODEERR ? `<div class="err">${esc(CODEERR)}</div>` : "";
+  el.innerHTML = `${TERR ? `<div class="err" style="margin:0 4px 10px">Status belum bisa diperbarui: ${esc(TERR)}</div>` : ""}
+  <div class="top" style="margin-bottom:8px"><h2 style="font-size:17px">Pesanan aktif</h2><small style="color:var(--mu)">diperbarui otomatis</small></div>${act.map(sCard).join("") || `<div class="empty" style="padding:18px 8px"><b>Tidak ada pesanan aktif</b>Pesan dari menu atau masukkan kode order di atas.</div>`}
+  <div class="top" style="margin:14px 0 4px"><h2 style="font-size:17px">Riwayat order</h2>${his.length ? `<a style="color:var(--bad);font-size:13px;text-decoration:underline;cursor:pointer" onclick="clearHist()">Hapus riwayat</a>` : ""}</div>${his.map(h => { const o = merged(h), st = o.status; return `<div class="hi"><div style="min-width:0"><b>${esc(o.id)}</b> <span class="tag ${st}" style="margin-left:4px">${sLabel(st)}</span><br><small style="color:var(--mu)">${fdt2(o.ts)}${o.items && o.items.length ? " · " + itemsTxt(o) : ""}</small></div><b>${rp(o.total)}</b></div>`; }).join("") || `<div class="empty" style="padding:18px 8px">Belum ada riwayat. Pesanan yang sudah lunas atau dibatalkan akan tersimpan di sini.</div>`}`;
 }
 async function addCode() {
   const code = $("#kd").value.trim().replace(/\s+/g, "").toUpperCase(); CODEERR = "";
-  if (!code) { CODEERR = "Isi kode order terlebih dahulu"; return drawStatus(); }
+  if (!code) { CODEERR = "Isi kode order terlebih dahulu"; return drawStatusList(); }
   const ex = HIST.find(h => String(h.id).toLowerCase() == code.toLowerCase());
-  if (ex) { JUST = ex.id; toast("Kode sudah ada di daftar"); refreshTr(true); return drawStatus(); }
-  const b = $(".wrapS .bt"); if (b) { b.disabled = true; b.textContent = "Mencari…"; }
+  if (ex) { JUST = ex.id; toast("Kode sudah ada di daftar"); $("#kd").value = ""; refreshTr(true); return drawStatusList(); }
+  const b = $("#kdb"); if (b) { b.disabled = true; b.textContent = "Mencari…"; }
   try {
     const r = await api("track", { ids: [code] }), o = (r.orders || [])[0];
-    if (!o) { CODEERR = "Kode order tidak ditemukan. Periksa kembali kode kamu."; return drawStatus(); }
-    HIST.unshift({ id: o.id, meja: o.meja, nama: o.nama, total: o.total, ts: o.ts || Date.now(), items: o.items || [], status: o.status || "Baru" });
-    TR[o.id] = o; saveHist(); JUST = o.id; TERR = "";
+    if (!o) CODEERR = "Kode order tidak ditemukan. Periksa kembali kode kamu.";
+    else {
+      HIST.unshift({ id: o.id, meja: o.meja, nama: o.nama, total: o.total, ts: o.ts || Date.now(), items: o.items || [], status: o.status || "Baru" });
+      TR[o.id] = o; saveHist(); JUST = o.id; TERR = ""; $("#kd").value = ""; stBadge();
+    }
   } catch (e) { CODEERR = e.message; }
-  drawStatus();
+  if (b) { b.disabled = false; b.textContent = "Cek"; }
+  drawStatusList();
 }
 function clearHist() {
   if (!confirm("Hapus riwayat di perangkat ini? Pesanan aktif tetap ditampilkan.")) return;
-  HIST = HIST.filter(h => !isFinal(h.status || "Baru")); saveHist(); drawStatus();
+  HIST = HIST.filter(h => !isFinal(h.status || "Baru")); saveHist(); drawStatusList();
+}
+
+/* ===== STRUK + KODE ORDER (CUSTOMER) ===== */
+function custStruk(o) {
+  const hr = `<hr style="border:0;border-top:1px dashed currentColor;margin:6px 0">`;
+  const ln = (a, b, bd) => `<div style="display:flex;justify-content:space-between;gap:8px;${bd ? "font-weight:700" : ""}"><span>${a}</span><span>${b}</span></div>`;
+  return `<div style="text-align:center;font-weight:700;font-size:15px">${esc(SET.nama)}</div><div style="text-align:center">Struk Pemesanan</div>${hr}<div style="text-align:center">Kode order</div><div style="text-align:center;font-weight:800;font-size:20px;letter-spacing:2px">${esc(o.id)}</div>${hr}${ln("Waktu", fdt2(o.ts))}${ln("Bangku", esc(o.meja))}${ln("Nama", esc(o.nama))}${hr}${o.items.map(i => `<div>${esc(i.name)}</div>` + ln(i.qty + " x " + rp(i.price), rp(i.qty * i.price))).join("")}${hr}${ln("TOTAL", rp(o.total), 1)}${ln("Status", "BELUM DIBAYAR")}${o.note ? `<div>Catatan: ${esc(o.note)}</div>` : ""}${hr}<div style="text-align:center">Simpan kode order untuk cek status.<br>Pembayaran dilakukan di kasir.<br>Terima kasih</div>`;
+}
+function showReceipt(o) {
+  RCP = o;
+  $("#rdl").innerHTML = `<div class="ov" style="z-index:24" role="dialog" aria-modal="true" aria-label="Struk pesanan"><div class="sheet" style="max-width:400px">
+  <div style="text-align:center"><div style="font-size:40px">✅</div><h2>Pesanan terkirim</h2><p style="color:var(--mu);margin:6px 0 0">Kode order kamu</p><div class="kode">${esc(o.id)}</div><button class="ib" onclick="copyKode()">Salin kode</button></div>
+  <div class="rcpbox">${custStruk(o)}</div>
+  <div class="r2"><button class="bt2" style="margin:0" onclick="closeRcp()">Tutup</button><button class="bt" style="margin:0" onclick="savePdf()">Simpan PDF</button></div>
+  <button class="bt2" onclick="closeRcp();openStatus('${esc(o.id)}')">Lihat status pesanan</button></div></div>`;
+}
+const closeRcp = () => { $("#rdl").innerHTML = ""; };
+const copyKode = () => RCP && navigator.clipboard.writeText(RCP.id).then(() => toast("Kode order disalin"), () => toast("Gagal menyalin"));
+function savePdf() {
+  if (!RCP) return;
+  const old = document.title, p = $("#prt");
+  p.className = "cu"; p.innerHTML = custStruk(RCP); document.title = "Struk-" + RCP.id;
+  const back = () => { document.title = old; p.className = ""; removeEventListener("afterprint", back); };
+  addEventListener("afterprint", back);
+  toast("Pilih “Simpan sebagai PDF” di dialog cetak");
+  setTimeout(() => window.print(), 150);
 }
 
 /* ================= KASIR ================= */
@@ -665,12 +704,19 @@ function adisc() { localStorage.removeItem("pos_url"); URLX = ""; alogout(); PG 
 const copyL = h => navigator.clipboard.writeText(location.origin + location.pathname + "?u=" + encodeURIComponent(URLX) + h).then(() => toast("Tautan disalin"), () => toast("Gagal menyalin"));
 
 addEventListener("pointerdown", () => { if (MODE != "customer" && !AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC) AC.resume(); });
-addEventListener("keydown", e => { if (e.key == "Escape") { if ($("#drw")) drw(0); $("#cfm").innerHTML = ""; } });
+addEventListener("keydown", e => { if (e.key == "Escape") { if ($("#drw")) drw(0); $("#cfm").innerHTML = ""; if (STO) closeStatus(); } });
 /* ================= START ================= */
 if (MODE == "admin") admin();
 else if (!URLX) notConn();
 else if (KASIR) { if (KEY) { AC = null; poll(true); } else login(); }
-else { const QK = new URLSearchParams(location.search).get("kode"); if (QK) { VIEW = "status"; CODEQ = QK; } cust(); if (QK) { goV("status"); setTimeout(() => { const i = $("#kd"); if (i) { i.value = CODEQ; addCode(); } }, 50); } if (actCnt()) refreshTr(true).then(() => { if (VIEW == "menu") { const h = $(".hd"); if (h) h.outerHTML = custHead(); } }); }
+else {
+  cust();
+  const QK = new URLSearchParams(location.search).get("kode");
+  if (QK) { openStatus(); setTimeout(() => { const i = $("#kd"); if (i) { i.value = QK; addCode(); } }, 50); }
+  setInterval(() => refreshTr(), 5000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshTr(true); });
+  if (actCnt()) refreshTr(true);
+}
 </script>
 </body>
 </html>
