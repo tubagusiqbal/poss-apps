@@ -1094,6 +1094,136 @@
         place-items: center;
         font-size: 17px;
       }
+      .bd.dc {
+        background: var(--bad);
+      }
+      .bd.r {
+        left: auto;
+        right: 8px;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        background: var(--soft);
+        border-radius: 14px;
+        padding: 4px;
+        margin-bottom: 10px;
+      }
+      .seg button {
+        padding: 10px 8px;
+        border-radius: 11px;
+        font-weight: 600;
+        color: var(--mu);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.15s;
+      }
+      .seg button.on {
+        background: var(--pr);
+        color: var(--pt);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      .tpl {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 99px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        white-space: nowrap;
+      }
+      .tpl.ta {
+        background: #fce7f3;
+        color: #be185d;
+      }
+      /* ===== responsif mobile (customer) ===== */
+      body {
+        overflow-x: hidden;
+      }
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));
+      }
+      .grid.k {
+        grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
+      }
+      .nv.cu {
+        display: none;
+      }
+      .sheet {
+        max-height: 94vh;
+        max-height: 94dvh;
+      }
+      .rcpbox {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 700px) {
+        .fl input,
+        .fl textarea,
+        .fl select,
+        .se {
+          font-size: 16px;
+        }
+        .grid:not(.k) .ft {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+          padding: 6px;
+        }
+        .grid:not(.k) .ft > div:first-child {
+          padding-left: 2px;
+        }
+        .grid:not(.k) .ft b {
+          font-size: 15px;
+        }
+        .grid:not(.k) .qt {
+          margin: 0;
+          width: 100%;
+          justify-content: space-between;
+        }
+        .grid:not(.k) .qt button {
+          width: 34px;
+          height: 32px;
+        }
+        .grid:not(.k) .add {
+          width: 100%;
+          margin: 0;
+          height: 34px;
+        }
+        .bd {
+          font-size: 11px;
+          padding: 2px 8px;
+          top: 6px;
+          left: 6px;
+        }
+        .bd.r {
+          right: 6px;
+        }
+        .top h2 {
+          font-size: 18px;
+        }
+        .sheet {
+          padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+        }
+        .kode {
+          font-size: 24px;
+          letter-spacing: 1px;
+        }
+        .hd {
+          border-radius: 18px;
+        }
+        .chip {
+          padding: 8px 14px;
+        }
+      }
+      @media (max-width: 340px) {
+        .grid:not(.k) {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1239,9 +1369,9 @@
         Q = "",
         CART = {},
         OPEN = false,
-        F = JSON.parse(
-          sessionStorage.getItem("pos_f") ||
-            '{"meja":"","nama":"","telp":"","note":""}'
+        F = Object.assign(
+          { meja: "", nama: "", telp: "", note: "", tipe: "Dine in" },
+          JSON.parse(sessionStorage.getItem("pos_f") || "{}")
         );
       const items = () =>
         MENU.filter((p) => CART[p.id]).map((p) => ({ ...p, qty: CART[p.id] }));
@@ -1388,16 +1518,17 @@
             .map((p) => {
               const c = CART[p.id] || 0,
                 out = p.stock < 1,
-                bd = out
-                  ? ["x", "Habis"]
-                  : p.stock <= 5
-                  ? ["w", "Sisa " + p.stock]
-                  : ["", "Tersedia"];
+                bds = out
+                  ? `<span class="bd x">Habis</span>`
+                  : (p.disc ? `<span class="bd dc">-${p.disc}%</span>` : "") +
+                    (p.stock <= 5
+                      ? `<span class="bd w r">Sisa ${p.stock}</span>`
+                      : "");
               return `<div class="card ${out ? "out" : ""}" ${
                 out ? "" : `onclick="chg('${p.id}',1)"`
-              }><div class="ph">${pic(p)}<span class="bd ${bd[0]}">${
-                bd[1]
-              }</span></div><b>${esc(p.name)}</b><div class="ft"><div><small>${
+              }><div class="ph">${pic(p)}${bds}</div><b>${esc(
+                p.name
+              )}</b><div class="ft"><div><small>${
                 p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"
               }</small><b>${rp(p.price)}</b></div>${
                 c
@@ -1414,13 +1545,31 @@
       }
       function panelHTML(err) {
         const L = items();
-        return `<h2>Detail Pesanan</h2><div class="box"><h3>Informasi Customer</h3><div class="fl"><label>Nama customer</label><input value="${esc(
+        return `<h2>Detail Pesanan</h2><div class="box"><div class="seg" role="radiogroup" aria-label="Jenis pesanan">${[
+          ["Dine in", "fa-utensils"],
+          ["Take Away", "fa-bag-shopping"],
+        ]
+          .map(
+            ([v, ic]) =>
+              `<button role="radio" aria-checked="${F.tipe == v}" class="${
+                F.tipe == v ? "on" : ""
+              }" onclick="setTipe('${v}')"><i class="fa-solid ${ic}" aria-hidden="true"></i>${v}</button>`
+          )
+          .join(
+            ""
+          )}</div><h3>Informasi Customer</h3><div class="fl"><label>Nama customer</label><input value="${esc(
           F.nama
-        )}" autocomplete="name" oninput="fin('nama',this.value)"></div><div class="r2"><div class="fl"><label>Nomor bangku</label><input value="${esc(
-          F.meja
-        )}" inputmode="numeric" oninput="fin('meja',this.value)"></div><div class="fl"><label>No. telepon</label><input type="tel" inputmode="tel" value="${esc(
-          F.telp
-        )}" autocomplete="tel" oninput="fin('telp',this.value)"></div></div></div>
+        )}" autocomplete="name" oninput="fin('nama',this.value)"></div>${
+          F.tipe == "Dine in"
+            ? `<div class="r2"><div class="fl"><label>Nomor bangku</label><input value="${esc(
+                F.meja
+              )}" inputmode="numeric" oninput="fin('meja',this.value)"></div><div class="fl"><label>No. telepon</label><input type="tel" inputmode="tel" value="${esc(
+                F.telp
+              )}" autocomplete="tel" oninput="fin('telp',this.value)"></div></div>`
+            : `<div class="fl"><label>No. telepon</label><input type="tel" inputmode="tel" value="${esc(
+                F.telp
+              )}" autocomplete="tel" oninput="fin('telp',this.value)"></div>`
+        }</div>
   <div class="sel"><b>${cnt()} item dipilih</b>${
           cnt() ? `<a onclick="CART={};afterChg()">Hapus semua</a>` : ""
         }</div>
@@ -1487,15 +1636,25 @@
         drawPanel();
       };
       function askSend() {
-        if (!F.meja.trim() || !F.nama.trim() || !F.telp.trim())
-          return drawPanel("Isi nomor bangku, nama, dan no. telepon");
+        if (
+          (F.tipe == "Dine in" && !F.meja.trim()) ||
+          !F.nama.trim() ||
+          !F.telp.trim()
+        )
+          return drawPanel(
+            F.tipe == "Dine in"
+              ? "Isi nomor bangku, nama, dan no. telepon"
+              : "Isi nama dan no. telepon"
+          );
         if (!/^[0-9+\-\s]{8,16}$/.test(F.telp.trim()))
           return drawPanel("No. telepon tidak valid");
         $(
           "#cfm"
-        ).innerHTML = `<div class="ov" style="z-index:25;align-items:center" role="alertdialog" aria-modal="true" aria-labelledby="cft"><div class="sheet" style="border-radius:24px;max-width:380px;text-align:center"><h2 id="cft">Kirim pesanan sekarang?</h2><p style="color:var(--mu);margin:10px 0 4px">Bangku ${esc(
-          F.meja
-        )} · ${esc(F.nama)}<br>${cnt()} item · <b style="color:var(--tx)">${rp(
+        ).innerHTML = `<div class="ov" style="z-index:25;align-items:center" role="alertdialog" aria-modal="true" aria-labelledby="cft"><div class="sheet" style="border-radius:24px;max-width:380px;text-align:center"><h2 id="cft">Kirim pesanan sekarang?</h2><p style="color:var(--mu);margin:10px 0 4px">${
+          F.tipe == "Take Away"
+            ? "Take Away"
+            : "Dine in · Bangku " + esc(F.meja)
+        } · ${esc(F.nama)}<br>${cnt()} item · <b style="color:var(--tx)">${rp(
           tot()
         )}</b></p><div class="r2"><button class="bt2" style="margin:12px 0 0" onclick="$('#cfm').innerHTML=''">Tidak</button><button class="bt" style="margin:12px 0 0" onclick="send()">Ya, kirim</button></div></div></div>`;
       }
@@ -1514,12 +1673,14 @@
         try {
           const r = await api("order", {
             ...F,
+            meja: F.tipe == "Take Away" ? "-" : F.meja,
             link: location.origin + location.pathname,
             items: L.map((i) => ({ id: i.id, qty: i.qty })),
           });
           const o = {
             id: r.id,
-            meja: F.meja,
+            tipe: F.tipe,
+            meja: F.tipe == "Take Away" ? "-" : F.meja,
             nama: F.nama,
             telp: F.telp,
             note: F.note,
@@ -1553,6 +1714,20 @@
         LAST = 0;
       const isFinal = (s) => s == "Lunas" || s == "Batal";
       const merged = (h) => ({ ...h, ...(TR[h.id] || {}) });
+      const lok = (o) =>
+        o.tipe == "Take Away"
+          ? "Take Away"
+          : (o.tipe ? "Dine in · " : "") + "Bangku " + o.meja;
+      const tpl = (o) =>
+        o.tipe
+          ? `<span class="tpl ${o.tipe == "Take Away" ? "ta" : ""}">${esc(
+              o.tipe
+            )}</span>`
+          : "";
+      const setTipe = (v) => {
+        fin("tipe", v);
+        drawPanel();
+      };
       const fdt2 = (t) =>
         new Date(t).toLocaleString("id-ID", {
           day: "2-digit",
@@ -1646,7 +1821,7 @@
           h.id == JUST ? "hl" : ""
         }"><div class="rw"><div><b style="font-size:17px">${esc(
           o.id
-        )}</b><br><small>${fdt2(o.ts)} · Bangku ${esc(o.meja)} · ${esc(
+        )}</b><br><small>${fdt2(o.ts)} · ${esc(lok(o))} · ${esc(
           o.nama
         )}</small></div><span class="tag ${st}">${sLabel(st)}</span></div>
   ${st == "Batal" ? "" : stepper(st)}
@@ -1744,6 +1919,7 @@
           else {
             HIST.unshift({
               id: o.id,
+              tipe: o.tipe,
               meja: o.meja,
               nama: o.nama,
               total: o.total,
@@ -1787,10 +1963,9 @@
           SET.nama
         )}</div><div style="text-align:center">Struk Pemesanan</div>${hr}<div style="text-align:center">Kode order</div><div style="text-align:center;font-weight:800;font-size:20px;letter-spacing:2px">${esc(
           o.id
-        )}</div>${hr}${ln("Waktu", fdt2(o.ts))}${ln("Bangku", esc(o.meja))}${ln(
-          "Nama",
-          esc(o.nama)
-        )}${hr}${o.items
+        )}</div>${hr}${ln("Waktu", fdt2(o.ts))}${ln("Jenis", esc(o.tipe))}${
+          o.tipe == "Take Away" ? "" : ln("Bangku", esc(o.meja))
+        }${ln("Nama", esc(o.nama))}${hr}${o.items
           .map(
             (i) =>
               `<div>${esc(i.name)}</div>` +
@@ -1913,7 +2088,7 @@
       function alarm(f) {
         const o = f[0],
           msg =
-            `Pesanan baru dari bangku ${o.meja} (${o.nama})` +
+            `Pesanan baru (${lok(o)}) dari ${o.nama}` +
             (f.length > 1 ? ` dan ${f.length - 1} lainnya` : "");
         beep();
         setTimeout(beep, 1500);
@@ -2034,10 +2209,9 @@
         )}</div><div style="text-align:center">Struk Pembayaran</div>${hr}${ln(
           "No",
           esc(o.id)
-        )}${ln("Waktu", fdt(o.ts))}${ln("Bangku", esc(o.meja))}${ln(
-          "Nama",
-          esc(o.nama)
-        )}${hr}${o.items
+        )}${ln("Waktu", fdt(o.ts))}${o.tipe ? ln("Jenis", esc(o.tipe)) : ""}${
+          o.tipe == "Take Away" ? "" : ln("Bangku", esc(o.meja))
+        }${ln("Nama", esc(o.nama))}${hr}${o.items
           .map(
             (i) =>
               `<div>${esc(i.name)}</div>` +
@@ -2060,7 +2234,7 @@
           "Struk Pembayaran",
           `No: ${o.id}`,
           `Waktu: ${fdt(o.ts)}`,
-          `Bangku ${o.meja} · ${o.nama}`,
+          `${lok(o)} · ${o.nama}`,
           "------------------",
           ...o.items.map((i) => `${i.qty}x ${i.name} - ${rp(i.qty * i.price)}`),
           "------------------",
@@ -2234,9 +2408,11 @@
           L.map(
             (o) => `<div class="card ${
               o.status == "Baru" ? "new" : ""
-            }" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="meja">Bangku ${esc(
-              o.meja
-            )}</span>${tg(o)}</div>
+            }" style="padding:14px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="meja">${
+              o.tipe == "Take Away" ? "Take Away" : "Bangku " + esc(o.meja)
+            }</span><span style="display:flex;gap:6px;align-items:center">${tpl(
+              o
+            )}${tg(o)}</span></div>
   <small style="color:var(--mu)">${esc(o.id)} · ${hhmm(o.ts)} · ${esc(
               o.nama
             )} · <a href="tel:${esc(o.telp)}" style="color:var(--pr)">${esc(
@@ -2640,11 +2816,9 @@
       .reverse()
       .map(
         (o) =>
-          `<div class="li"><span><b>${esc(o.id)}</b> · ${esc(
-            o.nama
-          )} · Bangku ${esc(o.meja)}<br><small style="color:var(--mu)">${fdt(
-            o.ts
-          )} · ${esc(
+          `<div class="li"><span><b>${esc(o.id)}</b> · ${esc(o.nama)} · ${esc(
+            lok(o)
+          )}<br><small style="color:var(--mu)">${fdt(o.ts)} · ${esc(
             o.items.map((i) => i.qty + "× " + i.name).join(", ")
           )}</small></span><span style="text-align:right"><b>${rp(
             o.total
