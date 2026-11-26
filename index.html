@@ -167,6 +167,8 @@ h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .kode{font:800 28px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:2px;background:var(--soft);border-radius:12px;padding:10px;margin:6px 0 10px;text-align:center;user-select:all}
 .rcpbox{background:var(--soft);border-radius:14px;padding:14px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:10px 0}
 @media print{#prt.cu{margin:10mm auto 0;width:80mm}}
+.fl select{width:100%;border:0;background:none;padding:2px 0;font:inherit;font-size:15px;color:var(--tx);outline:0;cursor:pointer}
+.eye{width:44px;padding:0;display:grid;place-items:center;font-size:17px}
 </style>
 </head>
 <body>
@@ -262,7 +264,7 @@ async function cust() {
 }
 function drawChips() {
   if (!$("#ch")) return;
-  const cats = ["Semua", ...new Set(MENU.map(p => p.cat).filter(Boolean))];
+  const used = [...new Set(MENU.map(p => p.cat).filter(Boolean))], ord = SET.kat || [], cats = ["Semua", ...ord.filter(c => used.includes(c)), ...used.filter(c => !ord.includes(c))];
   $("#ch").innerHTML = cats.map(c => `<button class="chip ${c == CAT ? "on" : ""}" onclick="CAT='${esc(c)}';drawChips();drawGrid()">${esc(c)}</button>`).join("");
 }
 function drawGrid() {
@@ -348,8 +350,8 @@ async function refreshTr(force) {
 }
 
 function stepper(st) {
-  const cur = st == "Baru" ? 0 : st == "Diproses" ? 1 : st == "Selesai" ? 2 : 3, done = st == "Lunas" ? 4 : cur;
-  return `<div class="stp" role="img" aria-label="Tahap: ${sLabel(st)}">${["Dipesan", "Diproses", "Selesai", "Dibayar"].map((n, i) => `<div class="${i < done ? "d" : ""} ${i == cur && st != "Lunas" ? "c" : ""}"><i>${i < done ? "✓" : i + 1}</i>${n}</div>`).join("")}</div>`;
+  const done = st == "Lunas" ? 3 : st == "Selesai" ? 2 : 0, cur = st == "Diproses" ? 0 : st == "Selesai" ? 2 : -1;
+  return `<div class="stp" role="img" aria-label="Tahap: ${sLabel(st)}">${["Diproses", "Selesai", "Bayar"].map((n, i) => `<div class="${i < done ? "d" : ""} ${i == cur ? "c" : ""}"><i>${i < done ? "✓" : i + 1}</i>${n}</div>`).join("")}</div>`;
 }
 function payLine(o) {
   const st = o.status;
@@ -375,7 +377,7 @@ function openStatus() {
   STO = true; JUST = ""; CODEERR = ""; TERR = ""; HIST = []; TR = {}; LAST = 0;
   $("#sdl").innerHTML = `<div class="ov" style="z-index:22" onclick="if(event.target==this)closeStatus()"><div class="sheet" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Status pesanan">
   <div class="top" style="margin-bottom:10px"><h2>Status Pesanan</h2><button class="ib" onclick="closeStatus()" aria-label="Tutup">✕</button></div>
-  <div class="box" style="margin-top:0"><h3>Masukkan kode order</h3><div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Contoh: PK7M2X" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" id="kdb" style="margin:0;width:auto;padding:0 20px" onclick="addCode()">Cek</button></div><div id="kde"></div></div>
+  <div class="box" style="margin-top:0"><h3>Masukkan kode order</h3><div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kode order</label><input id="kd" autocomplete="off" autocapitalize="characters" placeholder="Contoh: PK7M2X" onkeydown="if(event.key=='Enter')addCode()"></div><button class="bt" id="kdb" style="margin:0;width:auto;min-width:58px;padding:0 18px;align-items:center;justify-content:center" aria-label="Cek status" title="Cek status" onclick="addCode()"><i class="fa-solid fa-magnifying-glass"></i></button></div><div id="kde"></div></div>
   <div id="stl"></div></div></div>`;
   drawStatusList();
 }
@@ -391,7 +393,7 @@ async function addCode() {
   const code = $("#kd").value.trim().replace(/\s+/g, "").toUpperCase(); CODEERR = "";
   if (!code) { CODEERR = "Isi kode order terlebih dahulu"; return drawStatusList(); }
   if (HIST.find(h => String(h.id).toLowerCase() == code.toLowerCase())) { JUST = code; $("#kd").value = ""; refreshTr(true); return drawStatusList(); }
-  const b = $("#kdb"); if (b) { b.disabled = true; b.textContent = "Mencari…"; }
+  const b = $("#kdb"); if (b) { b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
   try {
     const r = await api("track", { ids: [code] }), o = (r.orders || [])[0];
     if (!o) CODEERR = "Kode order tidak ditemukan. Periksa kembali kode kamu.";
@@ -400,7 +402,7 @@ async function addCode() {
       TR[o.id] = o; JUST = o.id; TERR = ""; LAST = Date.now(); if ($("#kd")) $("#kd").value = "";
     }
   } catch (e) { CODEERR = /tidak dikenal/i.test(e.message) ? "Backend Google Sheet belum diperbarui. Pasang code.gs terbaru lalu Deploy > New version." : e.message; }
-  const b2 = $("#kdb"); if (b2) { b2.disabled = false; b2.textContent = "Cek"; }
+  const b2 = $("#kdb"); if (b2) { b2.disabled = false; b2.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>'; }
   drawStatusList();
 }
 function clearHist() { HIST = []; TR = {}; JUST = ""; drawStatusList(); }
@@ -478,7 +480,7 @@ const mt = (o, f) => f == "Semua" ? true : f == "Aktif" ? (o.status == "Baru" ||
 const payBtn = o => { const s = stx(o); return s == "Belum Dibayar" ? `<button class="bt" style="margin:0;grid-column:1/-1" onclick="openPay('${o.id}')">💵 Bayar</button>` : s == "Lunas" ? `<button class="bt2" style="margin:0;grid-column:1/-1" onclick="openPay('${o.id}')">🧾 Lihat / cetak struk</button>` : ""; };
 function todayBox(L) {
   const td = dstr(Date.now()), pd = L.filter(o => isPaid(o) && dstr(o.ts) == td), un = L.filter(o => stx(o) == "Belum Dibayar");
-  return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(sm(pd.map(o => o.total)))}</div><small>${pd.length} pesanan lunas · ${un.length} belum dibayar${HID ? "" : " (" + rp(sm(un.map(o => o.total))) + ")"}</small></div><button class="ib" style="color:var(--tx)" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);REDRAW()">${HID ? "👁️ Tampilkan" : "🙈 Sembunyikan"}</button></section>`;
+  return `<section class="pan big"><div><small>Pendapatan hari ini</small><div class="amt">${HID ? "Rp ••••••" : rp(sm(pd.map(o => o.total)))}</div><small>${pd.length} pesanan lunas · ${un.length} belum dibayar${HID ? "" : " (" + rp(sm(un.map(o => o.total))) + ")"}</small></div><button class="ib eye" style="color:var(--tx)" aria-label="${HID ? "Tampilkan nominal" : "Sembunyikan nominal"}" title="${HID ? "Tampilkan" : "Sembunyikan"}" onclick="HID=!HID;localStorage.setItem('pos_hide',HID?1:0);REDRAW()"><i class="fa-solid ${HID ? "fa-eye" : "fa-eye-slash"}"></i></button></section>`;
 }
 function struk(o) {
   const hr = `<hr style="border:0;border-top:1px dashed currentColor;margin:6px 0">`, p = isPaid(o), pi = payInfo(o);
@@ -576,7 +578,7 @@ const adoLogin = () => { AK = $("#k").value.trim(); aload(); };
 async function aload() {
   try {
     const [m, o] = await Promise.all([api("adminmenu", { key: AK }), api("orders", { key: AK, all: true })]);
-    AM = m.menu; setSet(m.set); SF = { ...SET }; ORD = AORD = o.orders; SEEN = new Set(ORD.map(x => x.id));
+    AM = m.menu; setSet(m.set); SF = { ...SET, kat: katBase() }; ORD = AORD = o.orders; SEEN = new Set(ORD.map(x => x.id));
     sessionStorage.setItem("pos_akey", AK); if (!APL) APL = setInterval(apoll, 8000);
     drawA();
   } catch (e) { AK = ""; sessionStorage.removeItem("pos_akey"); alogin(e.message); }
@@ -644,7 +646,7 @@ function drawMF(err) {
   $("#dlg").innerHTML = `<div class="ov"><div class="sheet"><h2>${MF.id ? "Edit" : "Tambah"} menu</h2><div class="ph" style="max-width:200px;margin:10px auto">${MF.photo ? `<img src="${esc(MF.photo)}" alt="">` : "📷"}</div>
   <div class="fl"><label>Foto menu</label><input type="file" accept="image/*" onchange="readImg(this.files[0],480,d=>{MF.photo=d;drawMF()})"></div>
   <div class="fl"><label>Nama menu</label><input value="${esc(MF.name)}" oninput="MF.name=this.value"></div>
-  <div class="fl"><label>Kategori</label><input list="cl" value="${esc(MF.cat)}" oninput="MF.cat=this.value"><datalist id="cl">${[...new Set(AM.map(p => p.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
+  <div class="fl"><label>Kategori</label><select onchange="MF.cat=this.value">${(() => { let L = katList(); if (MF.cat && !L.includes(MF.cat)) L = [MF.cat, ...L]; return `<option value="" disabled ${MF.cat ? "" : "selected"}>${L.length ? "Pilih kategori" : "Belum ada kategori (tambah di Setting)"}</option>` + L.map(c => `<option value="${esc(c)}" ${c == MF.cat ? "selected" : ""}>${esc(c)}</option>`).join(""); })()}</select></div>
   <div class="r2"><div class="fl"><label>Harga normal (Rp)</label><input type="number" inputmode="numeric" value="${MF.price}" oninput="MF.price=this.value"></div><div class="fl"><label>Diskon menu (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${MF.disc}" oninput="MF.disc=this.value"></div></div>
   <div class="r2"><div class="fl"><label>Stok</label><div class="qt" style="justify-content:space-between;margin:4px 0 0;gap:8px"><button class="m" style="width:38px;height:38px;font-size:20px" aria-label="Kurangi stok" onclick="mfStep(-1)">−</button><b id="mfst" style="font-size:20px" aria-live="polite">${MF.stock}</b><button style="width:38px;height:38px;font-size:20px" aria-label="Tambah stok" onclick="mfStep(1)">+</button></div></div><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${MF.aktif ? "checked" : ""} onchange="MF.aktif=this.checked">Tampilkan di menu</label></div>
   ${err ? `<div class="err">${esc(err)}</div>` : ""}<button class="bt" id="mfs" onclick="saveMF()">Simpan</button><button class="bt2" onclick="closeD()">Batal</button></div></div>`;
@@ -659,19 +661,35 @@ function stPrev(d) { $("#stp").textContent = "Stok menjadi: " + stNew(d); }
 function stOk(d) { if ((parseInt($("#stq").value) || 0) < 1) return $("#stp").textContent = "Isi jumlah minimal 1"; MF.stock = stNew(d); $("#mfst").textContent = MF.stock; $("#cfm").innerHTML = ""; }
 async function saveMF() {
   if (!MF.name.trim() || !(+MF.price > 0)) return drawMF("Isi nama dan harga normal");
+  if (!MF.cat && katList().length) return drawMF("Pilih kategori menu");
   const b = $("#mfs"); b.disabled = true; b.textContent = "Menyimpan…";
   try {
     await api("menusave", { key: AK, m: MF }); closeD(); aload();
   } catch (e) { drawMF(e.message); }
 }
 async function delMenu(id) { if (!confirm("Hapus menu ini?")) return; try { await api("menudel", { key: AK, id }); aload(); } catch (e) { toast(e.message); } }
+const katBase = () => (SET.kat && SET.kat.length ? [...SET.kat] : [...new Set(AM.map(p => p.cat).filter(Boolean))]);
+const katList = () => (SF && SF.kat ? SF.kat : katBase());
+function addKat() {
+  const v = ($("#nk").value || "").trim().slice(0, 40); if (!v) return;
+  if (SF.kat.some(c => c.toLowerCase() == v.toLowerCase())) return toast("Kategori sudah ada");
+  SF.kat.push(v); drawA(); setTimeout(() => { const i = $("#nk"); if (i) i.focus(); }, 30);
+}
+function delKat(i) {
+  const c = SF.kat[i], n = AM.filter(p => p.cat == c).length;
+  if (n && !confirm(`Kategori "${c}" dipakai ${n} menu. Menu tetap memakai nama ini sampai diedit. Hapus kategori?`)) return;
+  SF.kat.splice(i, 1); drawA();
+}
 function pSet() {
   const conn = `<section class="pan" style="margin-top:${AK ? 12 : 0}px"><h2>Sinkron Google Sheet</h2><p style="color:var(--mu);font-size:13px;margin:4px 0">Status: ${URLX ? (AK ? "Terhubung ✓" : "Belum masuk") : "Belum terhubung"}</p><div class="fl"><label>URL Web App (Apps Script)</label><input id="cu" value="${esc(URLX)}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="fl"><label>Kode admin</label><input id="ck" type="password" value="${esc(AK)}"></div><div class="r2"><button class="bt" style="margin:0" onclick="aconnect()">Hubungkan</button><button class="bt2" style="margin:0" onclick="adisc()">Putuskan</button></div>${URLX ? `<div class="r2" style="margin-top:8px"><button class="bt2" style="margin:0" onclick="copyL('')">Salin tautan customer</button><button class="bt2" style="margin:0" onclick="copyL('#kasir')">Salin tautan kasir</button></div>` : ""}</section>`;
   if (!AK) return conn;
-  SF = SF || { ...SET };
+  SF = SF || { ...SET, kat: katBase() };
+  SF.kat = SF.kat || katBase();
   SF.tema = { ...DT, ...(SF.tema || {}) };
   return `<section class="pan"><h2>Pengaturan Toko</h2><div class="fl" style="margin-top:12px"><label>Nama toko</label><input value="${esc(SF.nama)}" oninput="SF.nama=this.value"></div>
   <div class="fl"><label>Logo toko</label><div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span class="mk" style="width:48px;height:48px;overflow:hidden;flex:none">${SF.logo ? `<img src="${esc(SF.logo)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "🍜"}</span><input type="file" accept="image/*" onchange="readImg(this.files[0],160,d=>{SF.logo=d;drawA()},'image/png')">${SF.logo ? `<button class="ib" onclick="SF.logo='';drawA()">Hapus</button>` : ""}</div></div>
+  <h3 style="margin:16px 0 6px">Kategori Menu</h3><div class="chips" style="flex-wrap:wrap;overflow:visible;padding-bottom:8px">${SF.kat.map((c, i) => `<span class="chip" style="display:inline-flex;align-items:center;gap:8px">${esc(c)} <small style="color:var(--mu)">${AM.filter(p => p.cat == c).length}</small><button aria-label="Hapus kategori ${esc(c)}" onclick="delKat(${i})"><i class="fa-solid fa-xmark"></i></button></span>`).join("") || `<small style="color:var(--mu)">Belum ada kategori</small>`}</div>
+  <div style="display:flex;gap:8px;align-items:stretch"><div class="fl" style="flex:1;margin:0"><label>Kategori baru</label><input id="nk" placeholder="Contoh: Makanan" onkeydown="if(event.key=='Enter')addKat()"></div><button class="bt" style="margin:0;width:auto;min-width:56px;padding:0 18px;align-items:center" aria-label="Tambah kategori" onclick="addKat()"><i class="fa-solid fa-plus"></i></button></div><small style="color:var(--mu)">Kategori ini jadi pilihan saat tambah/edit menu. Klik “Simpan pengaturan” untuk menyimpan.</small>
   <h3 style="margin:16px 0 6px">Diskon</h3><label class="fl" style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;color:var(--tx)"><input type="checkbox" style="width:auto" ${SF.dAktif ? "checked" : ""} onchange="SF.dAktif=this.checked">Aktifkan diskon untuk semua menu</label>
   <div class="fl"><label>Besar diskon (%)</label><input type="number" inputmode="numeric" min="0" max="100" value="${SF.dPersen}" oninput="SF.dPersen=+this.value"></div><small style="color:var(--mu)">Menu yang punya diskon sendiri memakai diskonnya sendiri.</small>
   <h3 style="margin:16px 0 6px">Warna Tampilan</h3><div class="chips">${PRESETS.map((p, i) => `<button class="chip" onclick="setTema(${i})">${p[0]}</button>`).join("")}</div>
