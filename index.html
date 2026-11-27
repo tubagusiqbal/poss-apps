@@ -509,8 +509,8 @@
         color: #b45309;
       }
       .Selesai {
-        background: #282828;
-        color: #282828;
+        background: #dcfce7;
+        color: #15803d;
       }
       .Batal {
         background: var(--ln);
@@ -1322,6 +1322,64 @@
       @media (prefers-reduced-motion: reduce) {
         .nb {
           animation: none;
+        }
+      }
+      /* desktop: customer maks 4 kolom, admin-menu maks 5 kolom (kartu menyesuaikan lebar kolom) */
+      @media (min-width: 1000px) {
+        .grid:not(.k):not(.gm) {
+          grid-template-columns: repeat(
+            auto-fill,
+            minmax(max(170px, calc((100% - 42px) / 4)), 1fr)
+          );
+        }
+      }
+      @media (min-width: 701px) {
+        .grid.gm {
+          grid-template-columns: repeat(
+            auto-fill,
+            minmax(max(170px, calc((100% - 56px) / 5)), 1fr)
+          );
+        }
+      }
+      .mt {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1 1 auto;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      .mt .se {
+        flex: 1 1 180px;
+        min-width: 0;
+        max-width: 280px;
+      }
+      .mt select {
+        font: inherit;
+        color: var(--tx);
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 5px;
+        background: var(--soft);
+        outline: 0;
+        cursor: pointer;
+        max-width: 200px;
+      }
+      @media (max-width: 700px) {
+        .mt {
+          flex: 1 1 100%;
+        }
+        .mt .se {
+          flex: 1 1 100%;
+          max-width: none;
+        }
+        .mt select {
+          flex: 1 1 0;
+          max-width: none;
+          font-size: 16px;
+        }
+        .mt .bt {
+          flex: none;
         }
       }
     </style>
@@ -2995,34 +3053,66 @@
           hour: "2-digit",
           minute: "2-digit",
         });
+      let AMQ = "",
+        AMC = "Semua";
+      const amFiltered = () => {
+        const q = AMQ.trim().toLowerCase();
+        return AM.filter(
+          (p) =>
+            (AMC == "Semua" || p.cat == AMC) &&
+            (!q || (p.name + " " + (p.cat || "")).toLowerCase().includes(q))
+        );
+      };
+      const amTitle = () => {
+        const n = amFiltered().length;
+        return `Menu (${n}${n != AM.length ? " dari " + AM.length : ""})`;
+      };
+      const amCard = (p) =>
+        `<div class="card ${p.aktif ? "" : "out"}"><div class="ph">${pic(
+          p
+        )}<span class="bd ${
+          !p.aktif || p.stock < 1 ? "x" : p.stock <= 5 ? "w" : ""
+        }">${p.aktif ? "Stok " + p.stock : "Nonaktif"}</span></div><b>${esc(
+          p.name
+        )}</b><small style="color:var(--mu);padding:0 4px">${esc(
+          p.cat
+        )}</small><div class="ft"><div><small>${
+          p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"
+        }</small><b>${rp(
+          p.price
+        )}</b></div></div><div class="r2"><button class="add" onclick="openMF('${
+          p.id
+        }')">Edit</button><button class="add" style="color:var(--bad)" onclick="delMenu('${
+          p.id
+        }')">Hapus</button></div></div>`;
+      const amCards = () =>
+        amFiltered().map(amCard).join("") ||
+        (AM.length
+          ? `<div class="empty" style="grid-column:1/-1"><b>Menu tidak ditemukan</b>Coba kata kunci atau kategori lain.</div>`
+          : `<div class="empty" style="grid-column:1/-1"><b>Belum ada menu</b>Tambahkan menu pertama Anda.</div>`);
+      function drawAMG() {
+        const g = $("#amg"),
+          h = $("#amc");
+        if (g) g.innerHTML = amCards();
+        if (h) h.textContent = amTitle();
+      }
       function pMenu() {
-        return `<section class="pan"><div class="top"><h2>Menu (${
-          AM.length
-        })</h2><button class="bt" style="width:auto;margin:0;padding:10px 16px" onclick="openMF()">＋ Tambah menu</button></div><div class="grid">${
-          AM.map(
-            (p) =>
-              `<div class="card ${p.aktif ? "" : "out"}"><div class="ph">${pic(
-                p
-              )}<span class="bd ${
-                !p.aktif || p.stock < 1 ? "x" : p.stock <= 5 ? "w" : ""
-              }">${
-                p.aktif ? "Stok " + p.stock : "Nonaktif"
-              }</span></div><b>${esc(
-                p.name
-              )}</b><small style="color:var(--mu);padding:0 4px">${esc(
-                p.cat
-              )}</small><div class="ft"><div><small>${
-                p.disc ? "<s>" + rp(p.orig) + "</s> -" + p.disc + "%" : "Harga"
-              }</small><b>${rp(
-                p.price
-              )}</b></div></div><div class="r2"><button class="add" onclick="openMF('${
-                p.id
-              }')">Edit</button><button class="add" style="color:var(--bad)" onclick="delMenu('${
-                p.id
-              }')">Hapus</button></div></div>`
-          ).join("") ||
-          `<div class="empty" style="grid-column:1/-1"><b>Belum ada menu</b>Tambahkan menu pertama Anda.</div>`
-        }</div></section>`;
+        const cats = [
+          ...new Set([...katList(), ...AM.map((p) => p.cat).filter(Boolean)]),
+        ];
+        if (AMC != "Semua" && !cats.includes(AMC)) AMC = "Semua";
+        return `<section class="pan"><div class="top"><h2 id="amc">${amTitle()}</h2><div class="mt"><input class="se" type="search" placeholder="Cari menu" aria-label="Cari menu" value="${esc(
+          AMQ
+        )}" oninput="AMQ=this.value;drawAMG()"><select aria-label="Filter kategori" onchange="AMC=this.value;drawAMG()"><option value="Semua">Semua kategori</option>${cats
+          .map(
+            (c) =>
+              `<option value="${esc(c)}" ${c == AMC ? "selected" : ""}>${esc(
+                c
+              )}</option>`
+          )
+          .join(
+            ""
+          )}</select><button class="bt" style="width:auto;margin:0;padding:10px 16px" onclick="openMF()">＋ Tambah menu</button></div></div><div class="grid gm" id="amg">${amCards()}</div></section>`;
       }
       function openMF(id) {
         const p = AM.find((x) => x.id == id);
